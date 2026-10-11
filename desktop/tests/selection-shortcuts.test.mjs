@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 import ts from 'typescript';
-import {selectAllScope} from '../src/selection.ts';
+import {keepsNativeMenu,selectAllScope} from '../src/selection.ts';
 const state={home:false,blocked:false,drawingOpen:false,readerOpen:false};
 const target=kind=>({closest:selector=>selector.includes(kind)?{}:null});
 test('canvas owns select all; home and menus prevent whole-page selection',()=>{
@@ -34,3 +34,9 @@ test('both Ctrl+A and Cmd+A consume browser page selection and select cards exac
  for(const modifier of ['ctrlKey','metaKey']){const h=handlerFor({...state,popup:'',menu:null,sessionManaging:false});let prevented=0,stopped=0;h.run({key:'A',[modifier]:true,altKey:false,target:null,preventDefault:()=>prevented++,stopPropagation:()=>stopped++});assert.deepEqual(h.counts(),{cards:1,cleared:1});assert.equal(prevented,1);assert.equal(stopped,1);}
 });
 test('home Ctrl+A clears old selection and does not select hidden cards',()=>{const h=handlerFor({...state,home:true});let prevented=0;h.run({key:'a',ctrlKey:true,target:null,preventDefault:()=>prevented++,stopPropagation(){}});assert.deepEqual(h.counts(),{cards:0,cleared:1});assert.equal(prevented,1);});
+test('right-click keeps the system menu only in text fields and on selected text, never Reload elsewhere', () => {
+  assert.equal(keepsNativeMenu(target('textarea'), false), true);
+  assert.equal(keepsNativeMenu(target('message'), true), true);
+  for (const kind of ['message', 'composer', 'titlebar']) assert.equal(keepsNativeMenu(target(kind), false), false, kind);
+  assert.equal(keepsNativeMenu(null, false), false);
+});

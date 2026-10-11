@@ -5,6 +5,9 @@ export function selectAllScope(target: Target, state: { home: boolean; blocked: 
   if (target?.closest('.reader-panel,.message')) return 'text';
   return state.home || state.blocked || state.readerOpen ? 'ignore' : 'cards';
 }
+// The web engine's own right-click menu (Reload, Inspect…) is not part of the App. It stays only in
+// text fields and on selected text, where it offers cut, copy and paste.
+export function keepsNativeMenu(target: Target, onSelectedText: boolean) { return onSelectedText || !!target?.closest(EDITABLE); }
 export function clearTextSelection() { const selection = window.getSelection(); if (selection && selection.rangeCount !== 0) selection.removeAllRanges(); }
 
 const gestures = new Set<symbol>();

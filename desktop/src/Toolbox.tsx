@@ -10,6 +10,16 @@ type SkillDetail = { skill: Skill; body: string; files: Resource[] };
 type Template = { id: string; title: string; description: string; revision: string };
 type TemplateDetail = { template: Template; body: string };
 type Edit = { kind: 'skill' | 'template'; name: string; title: string; description: string; body: string; files: Resource[]; revision: string | null; readonly?: boolean };
+// Each built-in skill has its own mark and tone; skills the user adds get a tone from their name.
+const SKILL_LOOKS: Record<string, { icon: string; tone: string }> = {
+  'ai-product-initiation': { icon: 'bulb', tone: 'orange' }, 'pm-ai-product-design': { icon: 'chip', tone: 'purple' },
+  'pm-competitive-research': { icon: 'scale', tone: 'teal' }, 'pm-material-synthesis': { icon: 'layers', tone: 'blue' },
+  'pm-metrics-experiments': { icon: 'chart', tone: 'green' }, 'pm-opportunity-assessment': { icon: 'target', tone: 'yellow' },
+  'pm-prioritization-roadmap': { icon: 'flag', tone: 'orange' }, 'pm-requirements-prd': { icon: 'prd', tone: 'blue' },
+  'pm-user-research': { icon: 'users', tone: 'pink' }, 'product-manager': { icon: 'compass', tone: 'teal' },
+};
+const TONES = ['blue', 'green', 'yellow', 'purple', 'pink', 'orange', 'teal'];
+const skillLook = (name: string) => SKILL_LOOKS[name] ?? { icon: 'sparkle', tone: TONES[[...name].reduce((sum, char) => sum + char.charCodeAt(0), 0) % TONES.length] };
 const errorText = (error: unknown) => error instanceof Error ? error.message : '暂时没有保存成功，请重试。';
 const BUILTINS = [
   { icon: 'book', title: '产品立项', description: '八章工作底稿：问题、用户、取舍、体验与版本。', run: () => addCard('document', center(), true) },
@@ -118,7 +128,7 @@ export default function Toolbox() {
     {notice && <p className="library-notice" role="status">{notice}</p>}
     {!skills ? <p className="library-empty" role="status">正在读取技能…</p> : !skills.length ? <p className="library-empty">还没有技能，添加一个自己的工作流程。</p> : <div className="toolbox skills">
       {skills.map(skill => <article className="skill-card" key={skill.name}>
-        <button type="button" className="library-card-main" onClick={() => useSkill(skill)}><span className="skill-icon"><Icon name="sparkle" /></span><strong>{skill.title}</strong><p>{skill.description}</p><span className="skill-start">使用技能<Icon name="chevron" size={15} /></span></button>
+        <button type="button" className="library-card-main" onClick={() => useSkill(skill)}><span className="skill-icon" data-tone={skillLook(skill.name).tone}><Icon name={skillLook(skill.name).icon} size={19} /></span><strong>{skill.title}</strong><p>{skill.description}</p><span className="skill-start">使用技能<Icon name="chevron" size={15} /></span></button>
         <button type="button" className="library-card-edit icon-button" aria-label={`${skill.editable ? '编辑' : '查看'}技能：${skill.title}`} title={skill.editable ? '编辑技能' : '查看完整说明'} disabled={busy} onClick={() => void openSkill(skill)}><Icon name={skill.editable ? 'pencil' : 'book'} size={15} /></button>
       </article>)}
     </div>}

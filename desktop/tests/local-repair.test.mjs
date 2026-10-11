@@ -61,12 +61,18 @@ test('a real PDF is parsed into text and included in model context', async () =>
     assert.match(JSON.stringify(context.messages.at(-1)), /Users need fewer manual steps/);
   } finally { await task.destroy(); }
 });
+// Old versions are the App's own backups: deleted in place, never moved to the user's Trash.
+async function trashed(pattern) {
+  try { return (await readdir(join(process.env.SUO_TEST_TRASH_ROOT, 'Suo'))).filter(name => pattern.test(name)); }
+  catch (error) { if (error.code === 'ENOENT') return []; throw error; }
+}
 test('workspace revisions retain 30 valid versions and recover from a corrupt newest version', async () => {
   const root = await createTestDirectory('retention-'), store = new WorkspaceStore(root);
   let state = await store.create();
   for (let index = 0; index < 40; index++) state = await store.save({ ...state, draft: 'v' + index }, state.version);
   const names = (await readdir(store.folder(state.id))).filter(name => name.endsWith('.json'));
   assert.equal(names.length, 30); assert.equal((await store.load(state.id)).draft, 'v39');
+  assert.deepEqual(await trashed(/^\d{10}\.json-/u), [], 'pruned versions are not put in the Trash');
   await writeFile(join(store.folder(state.id), '0000000042.json'), '{broken');
   assert.equal((await store.load(state.id)).version, 41);
   const next = await store.save({ ...state, draft: 'after-corruption' }, state.version);
@@ -82,6 +88,7 @@ test('connections retain 3 private committed versions and each configure writes 
   for (let index = 0; index < 5; index++) await connections.configure({ provider: 'fixture', baseUrl: 'https://fixture.invalid/v1', modelId: 'fixture', apiKey: '' });
   const names = (await readdir(connections.directory)).filter(name => name.endsWith('.json'));
   assert.equal(names.length, 3); assert.equal((await stat(join(connections.directory, names[0]))).mode & 0o777, 0o600);
+  assert.deepEqual(await trashed(/^\d{13}-[a-f0-9-]{36}\.json-/u), [], 'old connection files with keys are not put in the Trash');
   await writeFile(join(connections.directory, '9999999999999-' + randomUUID() + '.json'), '{bad');
   assert.equal((await connections.load()).providers.fixture.apiKey, 'fixture-key');
 });

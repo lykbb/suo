@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { hideSystemRecord } from '../src/messageError.mjs';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 import ts from 'typescript';
@@ -8,7 +9,7 @@ import { replyWithSources } from '../src/sourceLinks.ts';
 
 const source = await readFile(new URL('../src/actions.ts', import.meta.url), 'utf8');
 const ast = ts.createSourceFile('actions.ts', source, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TS);
-const names = new Set(['hydrateDraftAttachments', 'serialize', 'scheduleSave', 'update', 'flush', 'startWith', 'updateDraft', 'canTravelDraft', 'travelDraftHistory', 'removeAttachment', 'importTarget', 'beginImport', 'endImport', 'beginNativeImport', 'importNativeAssets', 'importAssets', 'importBrowserFiles', 'switchSession', 'loadInitial', 'newCard', 'shortTitle', 'landAttachments', 'send', 'retry', 'continueMessage', 'historyText', 'copyMessage', 'endSteps', 'receive', 'answer']);
+const names = new Set(['hydrateDraftAttachments', 'serialize', 'scheduleSave', 'update', 'flush', 'startWith', 'updateDraft', 'canTravelDraft', 'travelDraftHistory', 'removeAttachment', 'importTarget', 'beginImport', 'endImport', 'beginNativeImport', 'importNativeAssets', 'importAssets', 'importBrowserFiles', 'switchSession', 'loadInitial', 'newCard', 'shortTitle', 'landAttachments', 'send', 'retry', 'continueMessage', 'actionLog', 'copyMessage', 'endSteps', 'receive', 'answer']);
 const declarations = ast.statements.filter(node => ts.isFunctionDeclaration(node) && names.has(node.name?.text));
 assert.equal(declarations.length, names.size);
 const code = ts.transpileModule(declarations.map(node => node.getText(ast)).join('\n'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
@@ -24,7 +25,7 @@ function harness({ a = workspace('A'), b = workspace('B'), prepare, browser, sav
   const session = { version: a.version, dirty: false, saving: null, pendingSave: null, pendingChanged: false, importing: false, importCount: 0, running: null };
   const apply = patch => { state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) }; };
   const context = {
-    exports: {}, crypto: { randomUUID }, structuredClone, AbortController, Error, Set, Map, Math, session,
+    exports: {}, crypto: { randomUUID }, structuredClone, AbortController, Error, Set, Map, Math, session, hideSystemRecord,
     workspaceLoads: { revision: 0 }, draftHistory: new Map(), importJobs: new Map(), nativeImports: [],
     history: { past: [], future: [] }, saveTimer: null, bindings: { flow: null }, entrances: new Map(), STAGGER: 0.06,
     clearTimeout() {}, setTimeout() { return 1; }, requestAnimationFrame() { return 1; }, drainNodeChanges() {},

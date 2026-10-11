@@ -11,7 +11,7 @@ import { app, hasThreadOf, isWelcomeOf, type Popup } from './state';
 import type { Asset, BoardTask, BridgeEvent, Card, CardData, Message, PanelName, Rect, Workspace, WorkspaceSummary } from './types';
 import { handleUiRequest } from './agentTools';
 import { metadataPatch, type MetadataChange } from './cardMetadata';
-import { messageDisplayText } from './messageError.mjs';
+import { hideSystemRecord, messageDisplayText } from './messageError.mjs';
 import { replyWithSources } from './sourceLinks';
 import { addCardsToGroup, captureGroupResize, groupSelectionPlan, reparentDraggedCards, resizeGroupCards, restoreGroupResize, selectedGroupIds, type GroupResizeSnapshot } from './grouping';
 
@@ -671,12 +671,12 @@ export async function send(text = app.get().workspace?.draft ?? '', { land = tru
     }
     finally { clearTimeout(timeout); }
     if (session.running !== run || run.cancelRequested) return;
-    const prepared = prepareHistory(workspace.messages.map(item => ({ role: item.role, text: item.role === 'assistant' ? historyText(item) : item.text, demo: item.demo, cancelled: item.cancelled, error: !!item.error && !item.incomplete })));
+    const prepared = prepareHistory(workspace.messages.map(item => ({ role: item.role, text: item.role === 'assistant' ? hideSystemRecord(item.text) : item.text, demo: item.demo, cancelled: item.cancelled, error: !!item.error && !item.incomplete })));
     const scopeNote = cards.length ? `本轮已读取 ${preparedIds.size}/${cards.length} 份资料${cards.length > preparedIds.size ? '，其余正文未发送，可继续按目录读取' : ''}` : '';
     const notes = [scopeNote, ...context.map(item => item.note)].filter(Boolean).join('；');
     if (notes) update(value => ({ ...value, messages: value.messages.map(item => item.id === messageId ? { ...item, contextNote: notes } : item) }));
     const materialCatalog = { items: cards.slice(0, 80).map(card => ({ id: card.id, title: card.title.slice(0, 120), kind: card.kind, prepared: preparedIds.has(card.id) })), total: cards.length, prepared: preparedIds.size, ...(cards.length > 80 ? { next: 80 } : {}) };
-    await request<{ runId: string }>('prompt.send', { runId: run.runId, logicalRequestId, ...taskScope, workspaceId: workspace.id, model: workspace.model, message, selected: context.map(({ note: _note, ...item }) => item), materialCatalog, history: prepared.history, historySummary: prepared.summary, summarizedTurns: prepared.summarized,
+    await request<{ runId: string }>('prompt.send', { runId: run.runId, logicalRequestId, ...taskScope, workspaceId: workspace.id, model: workspace.model, message, selected: context.map(({ note: _note, ...item }) => item), materialCatalog, history: prepared.history, historySummary: prepared.summary, actionLog: actionLog(workspace.messages), summarizedTurns: prepared.summarized,
       operationReceipts, ...(retryMessage ? { retryContext: { text: retryMessage.text, steps: attempts.flatMap(item => item.steps ?? []).slice(-512) } } : {}) });
   } catch (error) {
     if (session.running !== run) return;
@@ -815,12 +815,19 @@ export async function chooseOption(messageId: string, label: string) {
   await send(label, { land: false });
 }
 
-// What the model sees of an earlier reply: its text plus what that turn actually did, so a later
-// "the third link" or "that card" still makes sense.
-export function historyText(message: Message) {
-  const done = (message.steps ?? []).map(step => `${step.label}${step.detail ? `：${step.detail}` : ''}${step.status === 'error' ? '（未完成）' : ''}${step.refs?.length ? `\n${step.refs.map(ref => `  · ${ref}`).join('\n')}` : ''}`);
-  if (message.ask) done.push(`向用户提问「${message.ask.question}」，选项：${message.ask.options.map(option => option.label).join(' / ')}`);
-  return done.length ? `${message.text}\n\n〔系统记录：这一轮实际执行了〕\n${done.map(line => `- ${line}`).join('\n')}`.trim() : message.text;
+// What earlier turns actually did (tools, pages found, questions asked), so a later "the third
+// link" or "that card" still makes sense. It goes with the new message as a separate note: appended
+// to Suo's own replies, models copied it into their answers.
+export function actionLog(messages: Message[]) {
+  const entries: string[] = [];
+  messages.forEach((message, index) => {
+    if (message.role !== 'assistant' || message.demo || (!message.steps?.length && !message.ask)) return;
+    const asked = [...messages.slice(0, index)].reverse().find(item => item.role === 'user')?.text.trim().replace(/\s+/g, ' ').slice(0, 40) ?? '';
+    const lines = (message.steps ?? []).map(step => `  - ${step.label}${step.detail ? `：${step.detail}` : ''}${step.status === 'error' ? '（未完成）' : ''}${step.refs?.length ? `\n${step.refs.map(ref => `    · ${ref}`).join('\n')}` : ''}`);
+    if (message.ask) lines.push(`  - 向用户提问「${message.ask.question}」，选项：${message.ask.options.map(option => option.label).join(' / ')}${message.ask.answered ? `；用户选了「${message.ask.answered}」` : ''}`);
+    entries.push(`${asked ? `回应「${asked}」时：` : '一轮回复中：'}\n${lines.join('\n')}`);
+  });
+  return entries.slice(-6).join('\n');
 }
 
 // Carries out a board, document or material request from the assistant and sends back the result.
@@ -861,7 +868,7 @@ export function receive(event: BridgeEvent) {
   if (event.event === 'run-settled') {
     app.set({ busy: false });
     session.running = null;
-    update(state => ({ ...state, messages: state.messages.map(message => message.id === run.messageId ? { ...endSteps(message), cancelled: !!data.cancelled, error: data.error, incomplete: data.incomplete, stopReason: data.stopReason, retryConflict: data.retryConflict, saveUnconfirmed: data.saveUnconfirmed } : message) }));
+    update(state => ({ ...state, messages: state.messages.map(message => message.id === run.messageId ? { ...endSteps(message), text: hideSystemRecord(message.text), cancelled: !!data.cancelled, error: data.error, incomplete: data.incomplete, stopReason: data.stopReason, retryConflict: data.retryConflict, saveUnconfirmed: data.saveUnconfirmed } : message) }));
     void flush();
   }
 }

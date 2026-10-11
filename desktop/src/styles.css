@@ -296,6 +296,8 @@ input,textarea{border:1px solid var(--line);background:var(--surface)}
 .work-card:not(.editing) .card-markdown,.work-card:not(.editing) .card-reader,.work-card:not(.editing) .card-reader *{ user-select:none; -webkit-user-select:none; cursor:default; }
 .work-card:not(.editing) .card-reader input,.work-card:not(.editing) .card-reader textarea,.work-card:not(.editing) .card-reader [contenteditable]:not([contenteditable="false"]){ user-select:text; -webkit-user-select:text; cursor:text; }
 .message .card-markdown,.reader-panel .card-text,.reader-panel .card-markdown{ user-select:text; -webkit-user-select:text; }
+/* Names, steps, tags and buttons around a message are not part of what gets selected or copied. */
+.message-author,.message-steps,.message-actions,.context-tag,.stopped-label,.typing,.message-ask,.message-error-summary button{ user-select:none; -webkit-user-select:none; }
 html.suo-text-gesture,html.suo-text-gesture *{ user-select:none!important; -webkit-user-select:none!important; }
 html.suo-text-gesture iframe{ pointer-events:none!important; }
 

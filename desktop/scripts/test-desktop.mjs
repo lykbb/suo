@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { mkdir, readdir, realpath, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, realpath, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -57,6 +57,12 @@ try {
   process.off('SIGINT', onInterrupt);
   process.off('SIGTERM', onTerminate);
 }
-await writeFile(join(root, 'test-result.json'), JSON.stringify({ ...result, completedAt: new Date().toISOString() }, null, 2) + '\n', { flag: 'wx', mode: 0o600 });
-console.log(`Suo 测试产物已保留：${root}`);
+// A passing run leaves nothing behind; a failing one keeps its data and result for diagnosis.
+if (result.code === 0) {
+  await rm(root, { recursive: true, force: true });
+  console.log('Suo 测试全部通过，已清理本次测试目录。');
+} else {
+  await writeFile(join(root, 'test-result.json'), JSON.stringify({ ...result, completedAt: new Date().toISOString() }, null, 2) + '\n', { flag: 'wx', mode: 0o600 });
+  console.log(`Suo 测试未全部通过，测试产物已保留：${root}`);
+}
 process.exitCode = result.code ?? (result.signal === 'SIGINT' ? 130 : result.signal === 'SIGTERM' ? 143 : 1);

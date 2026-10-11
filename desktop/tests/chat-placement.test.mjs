@@ -1,13 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { hideSystemRecord } from '../src/messageError.mjs';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 import ts from 'typescript';
 
 const source = await readFile(new URL('../src/actions.ts', import.meta.url), 'utf8');
 const syntax = ts.createSourceFile('actions.ts', source, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TS);
-const names = new Set(['newCard', 'shortTitle', 'landAttachments', 'send']);
+const names = new Set(['newCard', 'shortTitle', 'landAttachments', 'send', 'actionLog']);
 const declarations = syntax.statements.filter(node => ts.isFunctionDeclaration(node) && names.has(node.name?.text));
 assert.equal(declarations.length, names.size);
 const code = ts.transpileModule(declarations.map(node => node.getText(syntax)).join('\n'), {
@@ -20,7 +21,7 @@ function harness({ nodes = [], attachments = [] } = {}) {
   const calls = [], entrances = new Map(), session = { running: null };
   let recorded = 0;
   const context = {
-    exports: {}, crypto: { randomUUID }, AbortController, setTimeout, clearTimeout, session, entrances, STAGGER: 0.06,
+    exports: {}, crypto: { randomUUID }, AbortController, setTimeout, clearTimeout, session, entrances, STAGGER: 0.06, hideSystemRecord,
     app: { get: () => state, set: patch => { state = { ...state, ...patch }; } },
     update: change => { state = { ...state, workspace: change(state.workspace) }; },
     record: () => { recorded++; }, flush: async () => {}, notice: () => {}, LOCAL_COMMANDS: {},

@@ -66,9 +66,16 @@ export function presentMessageError(value) {
   return { kind, title, reason, details };
 }
 
+// Earlier versions put an operation record after each reply in the history, and some models copied
+// it into their answers. It is internal, so it never shows, gets copied or is sent back as history.
+export function hideSystemRecord(text = '') {
+  const at = text.search(/〔系统记录[^〕\n]*〕/u);
+  return at < 0 ? text : text.slice(0, at).trimEnd();
+}
+
 // The same visible content is used when the user copies a message or places it on the board.
 export function messageDisplayText(message = {}) {
-  const text = message.text ?? '';
+  const text = hideSystemRecord(message.text ?? '');
   if (!message.error) return text;
   const { title, reason } = presentMessageError(message.error);
   return [text.trimEnd(), title, reason].filter(Boolean).join('\n\n');

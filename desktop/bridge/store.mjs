@@ -121,7 +121,7 @@ export class WorkspaceStore {
         // link() fails rather than replacing a competing revision.
         await link(scratch, join(folder, `${String(next.version).padStart(10, '0')}.json`));
       } finally { await unlink(scratch); }
-      try { await retainVersions(folder, /^\d{10}\.json$/u, 30, `${String(next.version).padStart(10, '0')}.json`, (value, name) => value.id === state.id && value.version === Number(name.slice(0, 10)), this.trashRoot); } catch { console.warn('Suo: 会话已保存，旧版本暂未整理。'); }
+      try { await retainVersions(folder, /^\d{10}\.json$/u, 30, `${String(next.version).padStart(10, '0')}.json`, (value, name) => value.id === state.id && value.version === Number(name.slice(0, 10))); } catch { console.warn('Suo: 会话已保存，旧版本暂未整理。'); }
       return next;
     });
     this.queues.set(state.id, pending);

@@ -1,5 +1,16 @@
 import type { CSSProperties } from 'react';
 const paths: Record<string, string> = {
+  // Marks of the built-in skills.
+  bulb: 'M9 18h6M10 21h4M12 3a6 6 0 00-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0012 3z',
+  chip: 'M8 8h8v8H8zM10 4v4m4-4v4m-4 8v4m4-4v4M4 10h4m-4 4h4m8-4h4m-4 4h4',
+  scale: 'M12 4v16M8 20h8M5 8h14M5 8l-3 6a3 3 0 006 0L5 8zm14 0l-3 6a3 3 0 006 0l-3-6z',
+  layers: 'M12 3l9 5-9 5-9-5 9-5zM3 12.5l9 5 9-5M3 16.5l9 5 9-5',
+  chart: 'M4 20h16M7 16v-4m5 4V8m5 8v-6',
+  target: 'M12 3a9 9 0 110 18 9 9 0 010-18zm0 4a5 5 0 110 10 5 5 0 010-10zm0 4a1 1 0 110 2 1 1 0 010-2z',
+  flag: 'M5 21V4m0 0h11l-2.5 4L16 12H5',
+  prd: 'M6 3h9l4 4v14H6V3zm9 0v4h4M9 12h7M9 16h7M9 8h3',
+  users: 'M9 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM3 20a6 6 0 0112 0M16 4.5a3.5 3.5 0 010 6.5M18 14.5a5 5 0 013 5.5',
+  compass: 'M12 3a9 9 0 110 18 9 9 0 010-18zm3.5 5.5l-2 5-5 2 2-5 5-2z',
   compose: 'M13 4H7a3 3 0 00-3 3v10a3 3 0 003 3h10a3 3 0 003-3v-6M15 4l3-2 4 4-2 3-7 7-4 1 1-4 5-6zm2 0l3 3', trash: 'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7', more: 'M5 12h.01M12 12h.01M19 12h.01',
   pencil: 'M4 16l12-12 4 4-12 12-5 1 1-5zm10-10l4 4', pin: 'M9 3h6l-1 6 4 4v2H6v-2l4-4-1-6zm3 12v6', back: 'M19 12H5m6-6l-6 6 6 6',
   cursor: 'M4 3l6 17 3-7 7-3L4 3z', hand: 'M8 11V5a2 2 0 014 0v5-3a2 2 0 014 0v3-1a2 2 0 014 0v6c0 4-3 7-7 7-3 0-5-1-7-4l-3-4a2 2 0 013-3l2 2z',

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { presentMessageError, redactErrorDetails } from '../src/messageError.mjs';
+import { hideSystemRecord, messageDisplayText, presentMessageError, redactErrorDetails } from '../src/messageError.mjs';
 import { describeError } from '../bridge/chat.mjs';
 
 test('historical provider errors show a concise Chinese cause while retaining sanitized details', () => {
@@ -116,3 +116,11 @@ test('large and malformed errors are bounded and harmless without losing the mai
   assert.doesNotThrow(() => presentMessageError(circle));
   assert.equal(presentMessageError(undefined).kind, 'unknown');
 });
+
+test('a system record a model copied into its reply is never shown, copied or placed on the board', () => {
+  const leaked = '画布上只有 2 张空白卡片。\n\n告诉我你的需求。\n\n〔系统记录：这一轮实际执行了〕\n- 查看画布：共 2 张\n  - e2dc21f9 新便签 @597,-463';
+  assert.equal(hideSystemRecord(leaked), '画布上只有 2 张空白卡片。\n\n告诉我你的需求。');
+  assert.equal(messageDisplayText({ text: leaked }), '画布上只有 2 张空白卡片。\n\n告诉我你的需求。');
+  assert.equal(hideSystemRecord('普通回复，提到〔括号〕也不受影响'), '普通回复，提到〔括号〕也不受影响');
+});
+

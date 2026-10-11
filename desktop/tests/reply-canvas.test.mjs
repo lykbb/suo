@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 import ts from 'typescript';
-import { messageDisplayText } from '../src/messageError.mjs';
+import { hideSystemRecord, messageDisplayText } from '../src/messageError.mjs';
 import { replyWithSources } from '../src/sourceLinks.ts';
 
 const source = await readFile(process.env.SUO_ACTIONS_SOURCE ?? new URL('../src/actions.ts', import.meta.url), 'utf8');
@@ -27,7 +27,7 @@ function harness() {
   const focused = [], notices = [], copied = [], entrances = new Map();
   let recorded = 0, flushed = 0;
   const context = {
-    exports: {}, session, entrances, messageDisplayText, replyWithSources, navigator: { clipboard: { writeText: async text => copied.push(text) } }, crypto: { randomUUID },
+    exports: {}, session, entrances, messageDisplayText, hideSystemRecord, replyWithSources, navigator: { clipboard: { writeText: async text => copied.push(text) } }, crypto: { randomUUID },
     app: { get: () => state, set: patch => { state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) }; } },
     update: change => { state = { ...state, workspace: change(state.workspace) }; },
     record: () => { recorded++; }, flush: async () => { flushed++; },

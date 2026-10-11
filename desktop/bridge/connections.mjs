@@ -95,7 +95,7 @@ export async function checkConnection({ api, baseUrl, apiKey, modelId, network }
 }
 
 export class Connections {
-  constructor({ root, dataRoot, fetch: fetchImpl = globalThis.fetch, trashRoot }) { this.root = root; this.dataRoot = dataRoot; this.directory = join(dataRoot, 'connections'); this.fetch = fetchImpl; this.trashRoot = trashRoot; }
+  constructor({ root, dataRoot, fetch: fetchImpl = globalThis.fetch }) { this.root = root; this.dataRoot = dataRoot; this.directory = join(dataRoot, 'connections'); this.fetch = fetchImpl; }
   async load() {
     let names = [];
     try { names = (await readdir(this.directory)).filter(name => /^\d{13}-[a-f0-9-]{36}\.json$/u.test(name)).sort().reverse(); }
@@ -171,7 +171,7 @@ export class Connections {
     const handle = await open(scratch, 'wx', 0o600);
     try { await handle.writeFile(JSON.stringify(next)); await handle.sync(); } finally { await handle.close(); }
     try { await link(scratch, join(this.directory, name)); } finally { await unlink(scratch); }
-    try { await retainVersions(this.directory, /^\d{13}-[a-f0-9-]{36}\.json$/u, 3, name, value => value?.providers && typeof value.providers === 'object', this.trashRoot); } catch { console.warn('Suo: 连接已保存，旧版本暂未整理。'); }
+    try { await retainVersions(this.directory, /^\d{13}-[a-f0-9-]{36}\.json$/u, 3, name, value => value?.providers && typeof value.providers === 'object'); } catch { console.warn('Suo: 连接已保存，旧版本暂未整理。'); }
     return connectionCatalog(next);
   }
 }

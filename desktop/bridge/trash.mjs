@@ -1,4 +1,4 @@
-import { mkdir, rename, readdir, readFile } from 'node:fs/promises';
+import { mkdir, rename, readdir, readFile, unlink } from 'node:fs/promises';
 import { join, basename } from 'node:path';
 import { homedir } from 'node:os';
 import { randomUUID } from 'node:crypto';
@@ -28,14 +28,16 @@ async function isValid(path, name, validate) {
 }
 
 // Only complete versions at or below this commit are eligible. Keep `limit` valid versions; invalid
-// files newer than the oldest kept one stay for diagnosis, everything older goes to the Trash.
-export async function retainVersions(folder, pattern, limit, ceiling, validate, trashRoot) {
+// files newer than the oldest kept one stay for diagnosis, everything older is deleted. These are the
+// App's own backups, written on every save, so they never go to the user's Trash; connection versions
+// also hold API keys, which must not pile up there.
+export async function retainVersions(folder, pattern, limit, ceiling, validate) {
   const names = (await readdir(folder)).filter(name => pattern.test(name) && name <= ceiling).sort().reverse();
   let valid = 0;
   for (const name of names) {
     const path = join(folder, name);
     if (valid < limit) { if (await isValid(path, name, validate)) valid++; continue; }
-    try { await moveToTrash(path, trashRoot); checked.delete(path); }
+    try { await unlink(path); checked.delete(path); }
     catch (error) { if (error.code !== 'ENOENT') throw error; }
   }
 }

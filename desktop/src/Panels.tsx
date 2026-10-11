@@ -8,9 +8,10 @@ import { AttachmentChip } from './Attachments';
 import Preview from './Preview';
 import ComposerOptions from './ComposerOptions';
 import MessageError from './MessageError.tsx';
+import { hideSystemRecord } from './messageError.mjs';
 import SourceLinks from './SourceLinks.tsx';
 import { sourceClick, sourceDoubleClick, sourcePointerDown } from './sourceLinkEvents';
-import { SLASH_COMMANDS, addCard, canTravelDraft, chooseOption, closeReader, continueMessage, copyMessage, openDrawing, pickFiles, replyToCanvas, retry, send, stop, travelDraftHistory, update, updateDraft } from './actions';
+import { SLASH_COMMANDS, addCard, chooseOption, closeReader, continueMessage, copyMessage, openDrawing, pickFiles, replyToCanvas, retry, send, stop, travelDraftHistory, update, updateDraft } from './actions';
 import { editableMarkdown } from './editableMarkdown';
 import { preferences } from './preferences';
 import { popover, spring } from './motion';
@@ -68,6 +69,30 @@ function Messages() {
     count.current = messages.length;
     if (element && (added || pinned.current)) { element.scrollTop = element.scrollHeight; pinned.current = true; }
   }, [messages]);
+  // A drag that starts in a message selects only inside it, like ⌘A does, instead of jumping to whole
+  // messages when it crosses the gaps between them.
+  const shown = messages.length > 0;
+  useEffect(() => {
+    const element = list.current;
+    if (!element) return;
+    let origin: Element | null = null;
+    const start = (event: PointerEvent) => { origin = event.button === 0 ? (event.target as Element | null)?.closest('.message') ?? null : null; };
+    const end = () => { origin = null; };
+    const keep = () => {
+      const selection = document.getSelection();
+      if (!origin || !selection || selection.isCollapsed) return;
+      const { anchorNode, anchorOffset, focusNode } = selection;
+      if (!anchorNode || !focusNode || !origin.contains(anchorNode) || origin.contains(focusNode)) return;
+      const edge = document.createRange();
+      edge.selectNodeContents(origin);
+      const after = !!(origin.compareDocumentPosition(focusNode) & Node.DOCUMENT_POSITION_FOLLOWING);
+      selection.setBaseAndExtent(anchorNode, anchorOffset, after ? edge.endContainer : edge.startContainer, after ? edge.endOffset : edge.startOffset);
+    };
+    element.addEventListener('pointerdown', start);
+    document.addEventListener('pointerup', end);
+    document.addEventListener('selectionchange', keep);
+    return () => { element.removeEventListener('pointerdown', start); document.removeEventListener('pointerup', end); document.removeEventListener('selectionchange', keep); };
+  }, [shown]);
   if (!messages.length) return <div className="messages"><div className="thread-empty"><Icon name="message" size={22} /><p>资料放在左边，讨论留在这里。<br />选中卡片后，可以围绕它继续聊。</p></div></div>;
   return <div className="messages" ref={list} onScroll={event => { const element = event.currentTarget; pinned.current = element.scrollHeight - element.scrollTop - element.clientHeight < 48; }}>
     <AnimatePresence initial={false}>{messages.map(message => <motion.article key={message.id} className={`message ${message.role}`} tabIndex={0}
@@ -77,7 +102,7 @@ function Messages() {
         <span className="step-mark" aria-label={step.status === 'running' ? '进行中' : step.status === 'done' ? '已完成' : '未完成'} />
         <span>{step.label}{step.detail && step.status !== 'running' ? <small>{step.detail}</small> : null}</span>
       </li>)}</ul> : null}
-      {message.text ? message.role === 'assistant' ? <Reply text={message.text} /> : <p>{message.text}</p> : message.error ? null : busy && message.id === messages.at(-1)?.id ? <span className="typing" aria-label="正在整理"><i /><i /><i /></span> : message.steps?.length || message.ask ? null : <p className="quiet">回复已停止</p>}
+      {message.text ? message.role === 'assistant' ? <Reply text={hideSystemRecord(message.text)} /> : <p>{message.text}</p> : message.error ? null : busy && message.id === messages.at(-1)?.id ? <span className="typing" aria-label="正在整理"><i /><i /><i /></span> : message.steps?.length || message.ask ? null : <p className="quiet">回复已停止</p>}
       {message.ask && <AskOptions id={message.id} ask={message.ask} active={!busy && message.id === messages.at(-1)?.id} />}
       {message.role === 'assistant' && <SourceLinks steps={message.steps} />}
       {message.error && <MessageError error={message.error} />}
@@ -141,8 +166,6 @@ export function Composer() {
     <div className="composer-foot">
       <div className="composer-left">
         <ComposerOptions />
-        <button type="button" className="message-action" title="撤销草稿修改 ⌘Z" aria-label="撤销草稿修改" disabled={!canTravelDraft(false)} onClick={() => travelDraftHistory(false)}><Icon name="undo" size={14} /></button>
-        <button type="button" className="message-action" title="恢复草稿修改 ⇧⌘Z" aria-label="恢复草稿修改" disabled={!canTravelDraft(true)} onClick={() => travelDraftHistory(true)}><Icon name="redo" size={14} /></button>
         <AnimatePresence mode="wait" initial={false}>
           {!welcome && selectedCount > 0 && <motion.span key="selected" className="context-label" initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -3 }} transition={{ duration: 0.14 }}>
             已引用 {selectedCount} 张卡片

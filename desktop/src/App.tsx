@@ -11,7 +11,7 @@ import TitleBar from './TitleBar';
 import Welcome from './Welcome';
 import { app, isWelcomeOf } from './state';
 import type { Card } from './types';
-import { clearTextSelection, selectAllScope } from './selection';
+import { clearTextSelection, keepsNativeMenu, selectAllScope } from './selection';
 
 import DrawingPanel from './DrawingPanel';
 
@@ -30,6 +30,21 @@ function useBridge() {
       await loadInitial(() => cancelled);
     })().catch(error => notice(String(error)));
     return () => { cancelled = true; unlisteners.forEach(off => off()); };
+  }, []);
+}
+
+// The web engine's own right-click menu (Reload, Inspect…) stays out of the App. This runs after the
+// canvas has shown its own menu, which already prevents the default one.
+function useNativeMenu() {
+  useEffect(() => {
+    if (!native) return;
+    const menu = (event: MouseEvent) => {
+      if (event.defaultPrevented) return;
+      const target = event.target instanceof Element ? event.target : null, selection = window.getSelection();
+      if (!keepsNativeMenu(target, !!target && !!selection && !selection.isCollapsed && selection.containsNode(target, true))) event.preventDefault();
+    };
+    document.addEventListener('contextmenu', menu);
+    return () => document.removeEventListener('contextmenu', menu);
   }, []);
 }
 
@@ -88,6 +103,7 @@ export default function App() {
   useEffect(() => bindFlow(flow), [flow]);
   useBridge();
   useShortcuts();
+  useNativeMenu();
   useEffect(() => {
     const outside = (event: PointerEvent) => {
       const state = app.get();

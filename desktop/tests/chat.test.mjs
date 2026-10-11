@@ -121,6 +121,16 @@ test('context has stable Suo identity and excludes demo/error/cancelled turns', 
   const context = makeContext(item, { ...config('http://localhost').providers.fixture.models[0], provider: 'fixture', api: 'openai-completions' });
   assert.equal(context.systemPrompt, SYSTEM_PROMPT); assert(!JSON.stringify(context).includes('旧演示')); assert(!JSON.stringify(context).includes('坏回答'));
 });
+test('what earlier turns did goes beside the new message, never into Suo\'s own replies', () => {
+  const item = { ...payload(), message: '第三个链接说了什么？', actionLog: '回应「搜一下竞品」时：\n  - 联网搜索「访谈工具」\n    · 工具 C https://c.example' };
+  item.history = [{ role: 'user', text: '搜一下竞品' }, { role: 'assistant', text: '找到了几款。' }];
+  const context = makeContext(item, { ...config('http://localhost').providers.fixture.models[0], provider: 'fixture', api: 'openai-completions' });
+  const last = context.messages.at(-1).content, reply = context.messages.find(message => message.role === 'assistant');
+  assert.match(last, /^<之前几轮的实际操作>\n回应「搜一下竞品」时：[\s\S]*https:\/\/c\.example\n<\/之前几轮的实际操作>/);
+  assert.match(last, /用户请求：第三个链接说了什么？$/);
+  assert.equal(reply.content[0].text, '找到了几款。');
+  assert.throws(() => makeContext({ ...item, actionLog: 'x'.repeat(20001) }, { ...config('http://localhost').providers.fixture.models[0], provider: 'fixture', api: 'openai-completions' }), /操作记录格式无效/);
+});
 
 test('the real SDK sends actual image data and complete PDF text to the local fixture', async () => {
   const api = provider(), url = await api.start(), events = [], settings = config(url);

@@ -10,7 +10,26 @@
 .toolbox .skill-card:hover { border-color:var(--line-strong); background:var(--surface-2); }
 .library-card-main { width:100%; height:100%; display:flex; flex-direction:column; align-items:flex-start; gap:12px; padding:18px; border-radius:inherit; text-align:left; }
 .library-card-main:focus-visible { outline:2px solid var(--text-3); outline-offset:-3px; }
-.skill-card .skill-icon { flex-shrink:0; display:grid; place-items:center; width:34px; height:34px; border-radius:8px; background:var(--surface-3); color:var(--text-2); }
+.skill-card .skill-icon { flex-shrink:0; display:grid; place-items:center; width:38px; height:38px; border-radius:10px; color:var(--tone-ink,var(--text-2));
+  background:linear-gradient(145deg,var(--tone-bg,var(--surface-3)),color-mix(in srgb,var(--tone-bg,var(--surface-3)) 86%,var(--tone-ink,var(--text-2))));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--tone-ink,var(--text-2)) 10%,transparent); transition:transform .22s cubic-bezier(.2,.8,.2,1); }
+.toolbox .skill-card:hover .skill-icon { transform:translateY(-1px) rotate(-4deg); }
+@media(prefers-reduced-motion:reduce){ .skill-card .skill-icon { transition:none; } .toolbox .skill-card:hover .skill-icon { transform:none; } }
+/* Soft tones for the skill marks, with deeper versions for the dark theme. */
+.skill-icon[data-tone="blue"]{--tone-bg:#e8effd;--tone-ink:#2f5bb7}
+.skill-icon[data-tone="green"]{--tone-bg:#e5f5ea;--tone-ink:#2f7a4a}
+.skill-icon[data-tone="yellow"]{--tone-bg:#fcf1d4;--tone-ink:#8a6412}
+.skill-icon[data-tone="purple"]{--tone-bg:#eeeafd;--tone-ink:#5b46b2}
+.skill-icon[data-tone="pink"]{--tone-bg:#fce9f1;--tone-ink:#a3386b}
+.skill-icon[data-tone="orange"]{--tone-bg:#fdecdc;--tone-ink:#a5531b}
+.skill-icon[data-tone="teal"]{--tone-bg:#e1f3f2;--tone-ink:#1f6f72}
+:root[data-theme="dark"] .skill-icon[data-tone="blue"]{--tone-bg:#1d2a44;--tone-ink:#9db8f2}
+:root[data-theme="dark"] .skill-icon[data-tone="green"]{--tone-bg:#1a3325;--tone-ink:#8fd1a8}
+:root[data-theme="dark"] .skill-icon[data-tone="yellow"]{--tone-bg:#382d12;--tone-ink:#e6c66f}
+:root[data-theme="dark"] .skill-icon[data-tone="purple"]{--tone-bg:#2a2446;--tone-ink:#bcaef5}
+:root[data-theme="dark"] .skill-icon[data-tone="pink"]{--tone-bg:#3b1e2c;--tone-ink:#f0a3c4}
+:root[data-theme="dark"] .skill-icon[data-tone="orange"]{--tone-bg:#3b2615;--tone-ink:#f2b37a}
+:root[data-theme="dark"] .skill-icon[data-tone="teal"]{--tone-bg:#163130;--tone-ink:#8fd4d0}
 .skill-card strong { font-size:15px; line-height:1.5; font-weight:600; margin:0; overflow:hidden; overflow-wrap:anywhere; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
 .skill-card p { margin:0; color:var(--text-3); font-size:12px; line-height:1.7; overflow:hidden; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; }
 .skill-card .skill-start { flex-shrink:0; width:100%; margin-top:auto; display:flex; align-items:center; justify-content:space-between; color:var(--text-2); font-size:12px; }
