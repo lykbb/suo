@@ -4,6 +4,10 @@
 
 Suo 是一个 macOS 桌面 App（Apple 芯片），没有命令行入口。
 
+<p align="center">
+  <img src="docs/canvas-agent.png" alt="Suo 画布与 Agent 对话" width="800">
+</p>
+
 ## 下载
 
 在 [Releases](../../releases) 下载 `Suo_<版本>_aarch64.dmg`，打开后把 Suo 拖进「应用程序」。App 没有 Apple 开发者签名，第一次打开时请在「应用程序」里右键 Suo，选择「打开」。
