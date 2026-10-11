@@ -64,7 +64,7 @@ input,textarea{border:1px solid var(--line);background:var(--surface)}
 .react-flow{transition:background-color .45s;--xy-background-color:var(--bg);--xy-selection-border:1px solid var(--select);--xy-selection-background-color:var(--selection-wash);--xy-edge-stroke:var(--edge);--xy-edge-stroke-selected:var(--text-2);--xy-connectionline-stroke:var(--edge)}
 .react-flow__background{transition:opacity .45s}
 .is-home .react-flow{--xy-background-color:var(--home)}
-.is-home .react-flow__background,.is-home .react-flow__attribution{opacity:0}
+.is-home .react-flow__background,.is-home .react-flow__attribution{display:none}
 .react-flow__attribution{transition:opacity .45s}
 .react-flow__pane{cursor:default!important}
 .react-flow__node-card,.react-flow__node-group{padding:0;border:0;background:transparent}
@@ -209,7 +209,7 @@ input,textarea{border:1px solid var(--line);background:var(--surface)}
 
 /* Corners */
 .zoom-controls,.bottom-status{transition:opacity .35s,translate .35s}
-.is-home .zoom-controls,.is-home .bottom-status{opacity:0;translate:0 8px;pointer-events:none}
+.is-home .zoom-controls,.is-home .bottom-status{display:none}
 .zoom-controls{position:absolute;right:24px;bottom:24px;height:40px;display:flex;align-items:center;padding:0 4px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--shadow-1);z-index:20}
 .zoom-controls button{width:32px;height:32px;display:grid;place-items:center;border-radius:var(--r-sm);color:var(--text-2);transition:background-color .12s}
 .zoom-controls button:hover{background:var(--surface-2);color:var(--text)}
