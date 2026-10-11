@@ -1,0 +1,12 @@
+.panel-edge { position:absolute; display:block; z-index:4; padding:0; border:0; background:transparent; border-radius:0; touch-action:none; }
+.panel-edge:hover { background:transparent; }
+.panel-edge:focus-visible { outline:2px solid var(--line-strong); outline-offset:-2px; }
+.panel-edge-n,.panel-edge-s { left:14px; right:14px; height:10px; cursor:ns-resize; }
+.panel-edge-n { top:-4px; }.panel-edge-s { bottom:-4px; }
+.panel-edge-e,.panel-edge-w { top:14px; bottom:14px; width:10px; cursor:ew-resize; }
+.panel-edge-e { right:-4px; }.panel-edge-w { left:-4px; }
+.panel-edge-ne,.panel-edge-se,.panel-edge-sw,.panel-edge-nw { width:18px; height:18px; }
+.panel-edge-ne { right:-4px; top:-4px; cursor:nesw-resize; }.panel-edge-se { right:-4px; bottom:-4px; cursor:nwse-resize; }
+.panel-edge-sw { left:-4px; bottom:-4px; cursor:nesw-resize; }.panel-edge-nw { left:-4px; top:-4px; cursor:nwse-resize; }
+.panel-moving { will-change:transform,width,height; }
+.panel-moving .card-html,.panel-moving .drawing-body { pointer-events:none; }

@@ -1,0 +1,4 @@
+interface:
+  display_name: "产品立项与规划教练"
+  short_description: "用证据逐步推导产品立项与迭代规划，生成八章 HTML 报告和可追溯工作底稿"
+  default_prompt: "使用 $ai-product-initiation，先与我梳理项目需求，再逐步推导报告；关键选择不清楚时先问我。"

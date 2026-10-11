@@ -1,0 +1,1 @@
+export function extractPdfText(pdf: { numPages: number; getPage(number: number): Promise<{ getTextContent(): Promise<{items: unknown[]}>; cleanup?(): void }> }, options?: { signal?: AbortSignal; maxPages?: number; maxChars?: number }): Promise<{text: string; pages: number; truncated: boolean}>;

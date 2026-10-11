@@ -1,0 +1,96 @@
+/* Inline editors and readers share the card's available space. */
+.work-card.document,.work-card.file{padding:12px;gap:8px}
+.work-card.file{min-height:180px}
+.editor-heading{min-height:26px;cursor:grab}
+.card-heading{flex-shrink:0;min-height:24px;cursor:grab}
+.card-heading:active{cursor:grabbing}
+.card-title{flex:1}
+.card-edit-title{min-width:0;flex:1;padding:3px 0!important;font-size:12px!important;color:var(--text-3)!important}
+.card-edit-body{min-height:60px;padding:4px 1px!important;overflow:auto;user-select:text;scrollbar-width:thin}
+.card-edit-body::placeholder{color:var(--text-3)}
+.work-card.note .card-edit-body::placeholder{color:var(--note-text-2)}
+.card-action{width:24px;height:24px;display:grid;place-items:center;flex-shrink:0;border-radius:6px;color:var(--text-3);background:transparent;cursor:pointer}
+.card-action:hover{background:var(--surface-3);color:var(--text)}
+.card-actions{display:flex;gap:2px;flex-shrink:0}
+.card-actions>.card-action:first-child{opacity:0;transition:opacity .15s}
+.work-card:hover .card-actions>.card-action:first-child,.work-card.selected .card-actions>.card-action:first-child,.card-actions:focus-within>.card-action:first-child{opacity:1}
+.card-reader{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;user-select:text;cursor:auto}
+.card-reader.compact{min-height:90px}
+.card-text{flex:1;min-height:0;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.8 -apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif;margin:0;padding:8px 2px;scrollbar-width:thin;user-select:text;cursor:text}
+.card-html{width:100%;flex:1;min-height:0;border:0;border-radius:6px;background:#fff;cursor:auto}
+.work-card>.card-html{min-height:100px}
+.card-media-shell{display:flex;align-items:center;justify-content:center;flex:1;min-height:0;background:var(--surface-2);border-radius:6px;overflow:hidden}
+.card-media{display:block;max-width:100%;width:100%;height:100%;min-height:0;object-fit:contain;border-radius:6px}
+.card-media-shell audio{max-width:100%;width:100%}
+.reader-message{padding:12px 6px;margin:auto 0;color:var(--text-3);font-size:12px;line-height:1.8;overflow-wrap:anywhere}
+.reader-limit{font-size:11px;color:var(--text-3);padding-top:5px;flex-shrink:0}
+.pdf-reader{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+.reader-toolbar{display:flex;align-items:center;justify-content:center;gap:8px;flex-shrink:0;height:30px;border-bottom:1px solid var(--line);margin-bottom:6px;font-size:11px;color:var(--text-3)}
+.reader-toolbar button{display:grid;place-items:center;min-width:23px;height:24px;border-radius:5px;padding:0 5px;font-size:11px;color:var(--text-2)}
+.reader-toolbar button:hover:not(:disabled){background:var(--surface-3)}
+.reader-toolbar .reader-view{margin-left:auto}
+.pdf-viewport{flex:1;min-height:0;overflow:auto;padding:4px 8px;background:var(--surface-2);border-radius:6px;scrollbar-width:thin}
+.pdf-canvas{display:block;max-width:100%;margin:0 auto;background:white;box-shadow:0 1px 4px rgb(0 0 0 / .06)}
+.reader-password{padding:16px 8px;display:flex;flex-direction:column;gap:8px;font-size:12px}
+.reader-password input{display:block;width:100%;height:30px;margin-top:5px;border-radius:5px;padding:4px 8px}
+.reader-password button{background:var(--surface-3);height:28px;border-radius:5px}
+/* Only pages near the reader viewport keep a canvas in memory. */
+.pdf-viewport{position:relative;overscroll-behavior:contain;overflow-anchor:auto}
+.pdf-page{position:relative;margin:0 auto 12px;background:#fff;flex-shrink:0;box-shadow:0 1px 4px rgb(0 0 0 / .06)}
+.pdf-page:last-child{margin-bottom:0}
+.pdf-page .pdf-canvas{box-shadow:none}
+.pdf-page-number{position:absolute;right:9px;bottom:5px;font-size:10px;line-height:1;color:#666666;pointer-events:none}
+.pdf-text-page{padding:8px 12px 22px}
+.pdf-text-page .card-text{overflow:visible;min-height:0}
+.pdf-page-placeholder{position:absolute;inset:0;background:#fff}
+
+.csv-reader{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+.csv-viewport{flex:1;min-height:0;overflow:auto;border:1px solid var(--line);border-radius:6px;scrollbar-width:thin;overscroll-behavior:contain}
+.csv-table{border-collapse:separate;border-spacing:0;min-width:100%;table-layout:auto;font-size:12px;color:var(--text)}
+.csv-table th{position:sticky;top:0;z-index:1;background:var(--surface-2);text-align:left;font-weight:600;white-space:nowrap;height:42px;padding:0 12px;border-bottom:1px solid var(--line)}
+.csv-table td{height:42px;padding:0 12px;border-bottom:1px solid var(--line);border-right:1px solid var(--line)}
+.csv-table td span{display:block;max-width:360px;min-width:90px;max-height:42px;line-height:20px;white-space:pre;overflow:auto;scrollbar-width:thin}
+.csv-table tr:last-child td{border-bottom:0}
+.csv-table th:last-child,.csv-table td:last-child{border-right:0}
+.csv-table .csv-spacer td{padding:0;border:0}
+
+.card-pin{opacity:0;color:var(--text-3);order:2}
+.work-card:hover .card-pin,.work-card.selected .card-pin,.card-pin:focus-visible,.card-pin.active{opacity:1}
+.card-pin.active{color:var(--text)}
+.work-card.media-card{position:relative;padding:0;gap:0;background:transparent;border:0;box-shadow:none;overflow:visible}
+.media-card>.card-heading{position:absolute;top:0;left:0;right:0;padding:4px 7px;border-radius:6px;background:var(--surface-overlay);backdrop-filter:blur(12px);z-index:4;opacity:0;transition:opacity .15s}
+.media-card:hover>.card-heading,.media-card.selected>.card-heading,.media-card:focus-within>.card-heading{opacity:1}
+.media-card>.card-reader{height:100%;border-radius:4px}
+.media-card .card-media-shell{background:transparent;border-radius:0}
+.media-card .card-media{border-radius:0}
+.media-card .card-html{border-radius:0}
+.media-card .pdf-reader{padding-top:0}
+@media(prefers-reduced-motion:reduce){.media-card>.card-heading{transition:none}}
+
+.image-card.work-card{ min-height:0; position:relative; border-radius:0; overflow:visible; }
+.image-card .card-reader.compact{ min-height:0; padding:0; overflow:hidden; border-radius:0; }
+.image-card .card-media{ display:block; width:100%; height:100%; object-fit:contain; border-radius:0; }
+.image-pin{ position:absolute; right:8px; top:8px; z-index:2; width:28px; height:28px; opacity:0; border:1px solid var(--line); border-radius:7px; background:var(--surface); box-shadow:var(--shadow-1); transition:opacity .12s; }
+.image-card:hover .image-pin, .image-card.selected .image-pin, .image-card:focus-within .image-pin{ opacity:1; }
+.sketch-reader{ flex:1; min-height:0; display:flex; align-items:center; justify-content:center; overflow:auto; }
+.sketch-reader .sketch-preview-image{ width:100%; height:100%; object-fit:contain; }
+.card-markdown { flex:1; min-height:0; overflow:auto; overflow-wrap:anywhere; padding:8px 2px; font:14px/1.8 -apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif; color:var(--text); user-select:text; cursor:text; scrollbar-width:thin; }
+.card-markdown h1,.card-markdown h2,.card-markdown h3,.card-markdown h4 { margin:0 0 12px; font-weight:600; line-height:1.5; }
+.card-markdown h1 { font-size:22px; }.card-markdown h2 { font-size:18px; }.card-markdown h3 { font-size:16px; }
+.card-markdown p { margin:0 0 12px; }.card-markdown ul,.card-markdown ol { padding-left:24px; margin:0 0 12px; }
+.card-markdown pre { overflow:auto; white-space:pre-wrap; padding:10px; border-radius:6px; background:var(--surface-2); }
+.card-markdown code { font:13px/1.7 ui-monospace,monospace; }.card-markdown table { border-collapse:collapse; max-width:100%; font-size:13px; }
+.card-markdown th,.card-markdown td { border:1px solid var(--line); padding:6px 8px; }.card-markdown blockquote { margin:12px 0; padding-left:12px; border-left:2px solid var(--line-strong); color:var(--text-3); }
+/* Markdown in note cards: the same elements as documents, sized to a note. */
+.work-card .card-body-markdown{white-space:normal}
+.card-body-markdown :is(p,ul,ol,pre,table,blockquote,h1,h2,h3,h4,h5,h6){margin:0 0 6px}
+.card-body-markdown>:last-child{margin-bottom:0}
+.card-body-markdown :is(h1,h2,h3,h4,h5,h6){font-size:inherit;font-weight:600;line-height:inherit}
+.card-body-markdown :is(ul,ol){padding-left:18px}
+.card-body-markdown code{font:12px/1.6 ui-monospace,monospace;padding:0 3px;border-radius:4px;background:var(--surface-2)}
+.card-body-markdown pre{white-space:pre-wrap;padding:6px 8px;border-radius:6px;background:var(--surface-2)}
+.card-body-markdown pre code{padding:0;background:none}
+.card-body-markdown table{border-collapse:collapse;font-size:12px}
+.card-body-markdown :is(th,td){border:1px solid var(--line);padding:3px 6px}
+.card-body-markdown blockquote{padding-left:10px;border-left:2px solid var(--line-strong);color:var(--text-3)}
+.card-body-markdown hr{border:0;border-top:1px solid var(--line);margin:6px 0}

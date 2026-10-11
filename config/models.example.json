@@ -1,0 +1,14 @@
+{
+  "providers": {
+    "my-provider": {
+      "name": "my-provider",
+      "baseUrl": "https://api.example.com/v1",
+      "apiKey": "YOUR_API_KEY",
+      "api": "openai-completions",
+      "authHeader": true,
+      "models": [
+        { "id": "model-id", "contextWindow": 128000, "maxTokens": 8192 }
+      ]
+    }
+  }
+}

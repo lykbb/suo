@@ -1,0 +1,3 @@
+.message-error-summary{margin-top:4px}
+.message-error-summary strong{display:block;font-size:var(--fs-2);font-weight:600;color:var(--text)}
+.message .message-error-summary p{margin-top:4px;color:var(--text-2);font-size:var(--fs-2);line-height:1.7}

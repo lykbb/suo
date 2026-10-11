@@ -1,0 +1,35 @@
+# 仓库里只放源码。依赖、构建产物、个人数据和本地草稿都留在本机。
+# 桌面端专用的规则在 desktop/.gitignore。
+
+# ---- 个人数据：模型密钥和会话，绝对不能提交 ----
+state/
+.env
+.env.*
+!.env.example
+
+# ---- 依赖：npm install 会重新下载 ----
+node_modules/
+
+# ---- 打包好的 App 和安装包：放到 GitHub Releases，不进仓库 ----
+*.app/
+*.dmg
+*.zip
+
+# ---- 本地草稿：设计稿和设计说明 ----
+design/
+
+# ---- 日志和临时文件 ----
+*.log
+npm-debug.log*
+*.tmp
+.test-*/
+__pycache__/
+
+# ---- 系统、编辑器和 AI 工具的本地文件 ----
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+.claude/
+.codex/

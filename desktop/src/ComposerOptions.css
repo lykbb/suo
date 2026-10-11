@@ -1,0 +1,31 @@
+/* Composer controls share the same quiet grayscale palette on home and in a session. */
+.composer-options{position:relative;display:flex;align-items:center;gap:2px;flex-shrink:0}
+.composer-control{display:flex;align-items:center;gap:6px;height:30px;padding:0 9px;border:1px solid transparent;border-radius:9px;font-size:12px;color:var(--text-3);white-space:nowrap;transition:background-color .16s,color .16s,border-color .16s}
+.composer-control:hover,.composer-control.open{background:var(--surface-3);border-color:var(--line);color:var(--text)}
+.composer-control:disabled{opacity:.5}
+.model-control>span{max-width:152px;overflow:hidden;text-overflow:ellipsis}
+.composer-popover{position:absolute;left:0;bottom:44px;z-index:25;width:318px;max-width:calc(100vw - 80px);overflow:hidden;border:1px solid var(--line);border-radius:16px;background:var(--surface);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 2px 5px rgb(0 0 0 / .03),0 16px 48px rgb(0 0 0 / .12);transform-origin:bottom left}
+.composer-popover-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;gap:10px}
+.composer-popover-head strong{font-size:13px;font-weight:600;color:var(--text)}
+.composer-popover-head>span{padding:2px 6px;border-radius:5px;background:var(--surface-3);color:var(--text-3);font-size:10px}
+.composer-options-list{padding:0 7px 7px;max-height:min(310px,calc(100vh - 240px));overflow:auto;overscroll-behavior:contain}
+.composer-option{width:100%;display:flex;align-items:center;gap:10px;padding:10px 9px;border-radius:10px;text-align:left;transition:background-color .14s;color:var(--text-2)}
+.composer-option:hover,.composer-option:focus-visible{background:var(--surface-2)}
+.composer-option.selected{background:var(--surface-3)}
+.option-icon{width:28px;height:28px;display:grid;place-items:center;flex-shrink:0;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text-3)}
+.option-copy{display:flex;flex-direction:column;flex:1;min-width:0;gap:2px}
+.option-copy strong{font-size:12px;line-height:1.6;font-weight:500;overflow-wrap:anywhere}
+.option-copy small{font-size:10px;line-height:1.6;color:var(--text-3);overflow-wrap:anywhere}
+.composer-option code{font-size:10px;color:var(--text-3)}
+.option-empty{font-size:11px;line-height:1.8;color:var(--text-3);padding:10px;margin:0}
+.option-retry{display:block;margin-top:6px;font-size:11px;text-decoration:underline;color:var(--text-2)}
+.composer .send,.composer.composer-home .send{width:32px;height:32px;padding:0;border:0;border-radius:var(--r-sm);color:var(--text-3);background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none;transition:background-color .16s,color .16s}
+.composer .send.ready,.composer .send.stop{color:var(--text-2);background:transparent;box-shadow:none}
+.composer .send.ready:hover,.composer .send.stop:hover{background:var(--surface-3);color:var(--text);box-shadow:none}
+.composer .send:disabled{opacity:.45}
+.composer .send:not(.ready):not(.stop),:root[data-theme="dark"] .composer .send:not(.ready):not(.stop){background:transparent;border-color:transparent}
+.composer .send .send-icon svg{stroke-width:1.7}
+.composer .send.stop .send-icon svg{width:14px;height:14px;fill:currentColor;stroke-width:0}
+.composer-left .context-label{flex:1;min-width:0}
+@media(max-width:880px){.composer-left .context-label{display:none}.model-control>span{max-width:118px}}
+@media(prefers-reduced-motion:reduce){.composer-control,.composer-option,.composer .send{transition:none}}

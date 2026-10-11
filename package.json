@@ -1,0 +1,17 @@
+{
+  "name": "suo",
+  "version": "0.1.0",
+  "description": "面向 AI 产品经理的桌面工作台；本目录提供 Agent 引擎依赖、网页读取与技能",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "test": "node --test test/web-fetch.test.mjs test/brand.test.mjs < /dev/null"
+  },
+  "dependencies": {
+    "@earendil-works/pi-coding-agent": "1.0.4"
+  }
+}

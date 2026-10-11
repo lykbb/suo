@@ -1,0 +1,22 @@
+# 桌面端专用的规则。依赖、日志、系统文件等通用规则在根目录 .gitignore。
+
+# ---- 本机数据：会话、导入的资料、模型连接（含 API Key），绝对不能提交 ----
+data/
+
+# ---- 下载缓存 ----
+.cargo-cache/
+.npm-cache/
+
+# ---- 构建产物：npm run build / npm run bundle 会重新生成 ----
+dist/
+build-resources/
+src-tauri/target/
+src-tauri/gen/
+src-tauri/test-results/
+
+# ---- 本地快照、测试产物和草稿 ----
+preview/
+backups/
+releases/
+docs/
+测试产物清理清单.md

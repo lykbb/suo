@@ -1,0 +1,5 @@
+.board-organizer{position:fixed;z-index:20000;width:244px;padding:8px;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-3);user-select:none}
+.board-organizer>button{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;text-align:left;border:0;background:transparent;border-radius:8px;font-size:var(--fs-2)}
+.board-organizer>button:hover{background:var(--surface-2)}
+.board-organizer>label{display:flex;align-items:center;gap:8px;padding:10px 12px 6px;font-size:11px;color:var(--text-2)}
+.board-organizer input{accent-color:var(--text)}

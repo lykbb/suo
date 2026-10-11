@@ -1,0 +1,1 @@
+{"bundle": {"resources": {"../build-resources/runtime/": "runtime/", "../bridge/": "bridge/", "../../skills/": "skills/"}}}

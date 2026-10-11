@@ -1,0 +1,47 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Suo",
+  "version": "0.1.0",
+  "identifier": "local.suo.desktop",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Suo · 产品工作台",
+        "width": 1360,
+        "height": 880,
+        "minWidth": 820,
+        "minHeight": 620,
+        "titleBarStyle": "Overlay",
+        "trafficLightPosition": { "x": 18, "y": 19 },
+        "hiddenTitle": true,
+        "backgroundColor": "#EFEBE4",
+        "dragDropEnabled": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: suo-file: http://suo-file.localhost; font-src 'self' data: blob:; worker-src 'self' blob:; media-src 'self' blob: suo-file: http://suo-file.localhost; connect-src 'self' ipc: http://ipc.localhost suo-file: http://suo-file.localhost; frame-src 'self' blob:; object-src 'none'; base-uri 'self'",
+      "capabilities": [
+        "main-window"
+      ]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "app"
+    ],
+    "icon": [
+      "icons/icon.png"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "13.0"
+    }
+  }
+}

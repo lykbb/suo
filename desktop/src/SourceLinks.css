@@ -1,0 +1,4 @@
+.message-sources{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:12px;font-size:inherit;line-height:1.8;overflow-wrap:anywhere;color:var(--text)}
+.message-sources a,.card-markdown a,.card-body-markdown a{color:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.message-sources a:focus-visible,.card-markdown a:focus-visible,.card-body-markdown a:focus-visible{outline:1px solid currentColor;outline-offset:3px;border-radius:2px}
+.work-card:not(.editing) :is(.card-markdown,.card-body-markdown) a{cursor:pointer}
