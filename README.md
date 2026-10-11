@@ -14,6 +14,10 @@ Suo 是一个 macOS 桌面 App（Apple 芯片），没有命令行入口。
 
 打开后在「设置 → 模型」里添加自己的模型连接（OpenAI 兼容、OpenAI Responses 或 Anthropic 接口），可以用「测试连接」确认模型能用、是否支持工具调用。
 
+<p align="center">
+  <img src="docs/welcome.png" alt="Suo 欢迎界面" width="600">
+</p>
+
 ## 能做什么
 
 - **画布**：便签、文档、草图和文件卡片自由摆放、连线、分组（⌘G）、上色、加标签和置顶；便签和文档支持 Markdown，文档可以导出为 Markdown 文件。
