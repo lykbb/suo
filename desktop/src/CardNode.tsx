@@ -1,5 +1,5 @@
 import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Handle, NodeResizer, Position, type NodeProps } from '@xyflow/react';
+import { Handle, NodeResizer, Position, useUpdateNodeInternals, type NodeProps } from '@xyflow/react';
 import { motion } from 'motion/react';
 import Icon from './Icon';
 import Preview, { DocumentText } from './Preview';
@@ -15,6 +15,17 @@ import { editableMarkdown } from './editableMarkdown';
 import { sourceClick, sourceDoubleClick, sourcePointerDown } from './sourceLinkEvents';
 import './SourceLinks.css';
 import { groupResizeMinimum } from './grouping';
+
+// A connection dot on every side. Each one starts and takes any number of lines, in or out (the
+// canvas connects loosely), and lines meet at the dot whichever way they run.
+const PORTS = [Position.Top, Position.Right, Position.Bottom, Position.Left];
+const Ports = memo(function Ports({ id }: { id: string }) {
+  const updateNodeInternals = useUpdateNodeInternals();
+  // A mounted port set may replace cached handles without changing the node's size.
+  useEffect(() => { updateNodeInternals(id); }, [id, updateNodeInternals]);
+  return <>{PORTS.map(side => <Handle key={side} id={side} type="source" position={side} />)}</>;
+});
+
 const DrawingPreview = lazy(() => import('./DrawingPreview'));
 
 function variantOf(data: Card['data']) {
@@ -64,7 +75,6 @@ export const CardNode = memo(function CardNode({ id, data, selected, dragging }:
   return <>
     <NodeResizer isVisible={!!selected && !dragging} keepAspectRatio={image} minWidth={image ? 64 * Math.min(1, ratio) : data.kind === 'drawing' ? 380 : data.asset ? 250 : 200} minHeight={image ? 64 / Math.max(1, ratio) : data.kind === 'drawing' ? 240 : data.asset ? 180 : 130}
       handleClassName="card-resize-handle" lineClassName="card-resize-line" onResizeStart={() => record()} />
-    <Handle type="target" position={Position.Left} />
     <motion.article className={`work-card ${variant} ${selected ? 'selected' : ''} ${editing ? 'editing' : ''} ${media ? 'media-card' : ''} ${image ? 'image-card' : ''}`}
       style={cardMetadataStyle(data.color)} data-custom-color={normalizeCardColor(data.color)}
       onPointerDownCapture={event => { if (!(event.target as Element).closest('a[data-source-link]')) activate(event); }}
@@ -72,7 +82,7 @@ export const CardNode = memo(function CardNode({ id, data, selected, dragging }:
       aria-label={data.kind === 'drawing' ? '草图预览' : undefined}
       onKeyDown={event => { if (event.target === event.currentTarget && data.kind === 'drawing' && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); event.stopPropagation(); open(); } }}
       initial={!entrance ? false : from ? { opacity: 0, x: from.x, y: from.y, scale: from.scale, rotate: from.rotate } : { opacity: 0, scale: 0.94, y: 12 }}
-      animate={{ opacity: 1, scale: dragging ? 1.025 : 1, x: 0, y: 0, rotate: 0 }}
+      animate={{ opacity: 1, scale: 1, x: 0, y: 0, rotate: 0 }}
       transition={!entered && entrance ? { ...(from ? flight : spring), delay: entrance.delay, opacity: { duration: 0.18, delay: entrance.delay } } : spring}
       onAnimationComplete={() => { if (!entered) setEntered(true); }}
       onDoubleClick={event => { event.stopPropagation(); if (!(event.target as Element).closest('a, button, input, textarea, video, audio')) { event.preventDefault(); clearTextSelection(); open(); } }}>
@@ -91,7 +101,7 @@ export const CardNode = memo(function CardNode({ id, data, selected, dragging }:
       </>}
       <CardTags tags={data.tags}/>
     </motion.article>
-    <Handle type="source" position={Position.Right} />
+    <Ports id={id} />
   </>;
 });
 export const GroupNode = memo(function GroupNode({ id, data, selected }: NodeProps<Card>) {
@@ -123,12 +133,11 @@ export const GroupNode = memo(function GroupNode({ id, data, selected }: NodePro
     <NodeResizer isVisible={!!selected} minWidth={minimum.width} minHeight={minimum.height} handleClassName="card-resize-handle" lineClassName="card-resize-line"
       onResizeStart={begin} onResize={preview} onResizeEnd={end} shouldResize={shouldResize} />
     {/* Links to a group (made by Suo or by dragging) need these to be drawn. */}
-    <Handle type="target" position={Position.Left} />
     <motion.div className={`card-group ${selected ? 'selected' : ''}`} initial={entrance === undefined ? false : { opacity: 0, scale: 0.98 }}
       style={cardMetadataStyle(data.color)} data-custom-color={normalizeCardColor(data.color)}
       animate={{ opacity: 1, scale: 1 }} transition={spring} onDoubleClick={event => { event.stopPropagation(); if (!(event.target as Element).closest('button, input')) openCard(id); }}>
       <div className="card-group-heading"><span>{data.title}</span></div><CardTags tags={data.tags}/>
     </motion.div>
-    <Handle type="source" position={Position.Right} />
+    <Ports id={id} />
   </>;
 });

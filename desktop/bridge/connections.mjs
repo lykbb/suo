@@ -81,10 +81,13 @@ async function readConfig(path) {
 // A free model-list request before saving. A wrong key or a model the endpoint no longer offers is
 // refused with the models it does offer; an endpoint that is unreachable or has no list is saved
 // anyway, with a warning. Messages never contain the address or the key.
+const authHeaders = (api, apiKey) => api === 'anthropic-messages' ? { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' } : { Authorization: `Bearer ${apiKey}` };
+// Anthropic's address has no /v1 (the SDK adds it); OpenAI-style addresses include their version.
+const modelsUrl = (api, baseUrl) => api === 'anthropic-messages' && !/\/v\d+$/u.test(baseUrl) ? `${baseUrl}/v1/models` : `${baseUrl}/models`;
 export async function checkConnection({ api, baseUrl, apiKey, modelId, network }, fetchImpl = globalThis.fetch) {
-  const headers = api === 'anthropic-messages' ? { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' } : { Authorization: `Bearer ${apiKey}` };
+  const headers = authHeaders(api, apiKey);
   let response;
-  try { response = await createConnectionFetch({ baseUrl, network }, { fetchImpl })(`${baseUrl}/models`, { headers, signal: AbortSignal.timeout(8000) }); }
+  try { response = await createConnectionFetch({ baseUrl, network }, { fetchImpl })(modelsUrl(api, baseUrl), { headers, signal: AbortSignal.timeout(8000) }); }
   catch (error) { return { warning: `连接已保存，但现在连不上这个接口（${error?.cause?.code ?? error?.name ?? '网络错误'}），发送前请检查网络或接口地址。` }; }
   if (response.status === 401 || response.status === 403) throw new Error(`API Key 无效或没有权限（HTTP ${response.status}），连接未保存。`);
   if (!response.ok) return {};
@@ -92,6 +95,21 @@ export async function checkConnection({ api, baseUrl, apiKey, modelId, network }
   try { ids = (await response.json())?.data?.map(item => item?.id).filter(id => typeof id === 'string'); } catch { return {}; }
   if (!ids?.length || ids.includes(modelId)) return {};
   throw new Error(`这个接口没有「${modelId}」，连接未保存。可用的模型：${ids.slice(0, 12).join('、')}${ids.length > 12 ? ' 等' : ''}`);
+}
+
+// The chat models an endpoint offers, so the user picks one instead of typing its exact ID. A free
+// request; speech, image and embedding models are left out of the choice.
+const NOT_CHAT = /embed|whisper|tts|dall-e|moderation|transcribe|rerank|realtime|audio|image|vision-preview|search-preview/iu;
+export async function listModels({ api, baseUrl, apiKey, network }, fetchImpl = globalThis.fetch) {
+  let response;
+  try { response = await createConnectionFetch({ baseUrl, network }, { fetchImpl })(modelsUrl(api, baseUrl), { headers: authHeaders(api, apiKey), signal: AbortSignal.timeout(8000) }); }
+  catch (error) { throw new Error(`连不上这个接口（${error?.cause?.code ?? error?.name ?? '网络错误'}），请检查网络和接口地址。`); }
+  if (response.status === 401 || response.status === 403) throw new Error(`API Key 无效或没有权限（HTTP ${response.status}）。`);
+  let ids;
+  try { ids = response.ok ? (await response.json())?.data?.map(item => item?.id).filter(id => typeof id === 'string' && id.length <= 240) : undefined; } catch {}
+  if (!ids?.length) throw new Error(`这个接口没有提供模型列表${response.ok ? '' : `（HTTP ${response.status}）`}，请手动填写模型名称。`);
+  const chat = ids.filter(id => !NOT_CHAT.test(id));
+  return { models: [...new Set(chat.length ? chat : ids)].slice(0, 300) };
 }
 
 export class Connections {
@@ -109,6 +127,25 @@ export class Connections {
   }
   async list() {
     return connectionCatalog(await this.load());
+  }
+  // Lists models for the form. A key already saved for the same address and API type may be reused;
+  // it is never sent to a different address.
+  async discover(payload) {
+    const api = payload?.api ?? 'openai-completions';
+    if (!APIS.has(api)) throw new Error('接口类型无效。');
+    let baseUrl;
+    try { baseUrl = new URL(String(payload?.baseUrl ?? '').trim()).href.replace(/\/$/u, ''); } catch { throw new Error('接口地址格式不正确，请填写完整的 http 或 https 地址。'); }
+    if (!/^https?:$/u.test(new URL(baseUrl).protocol)) throw new Error('接口地址格式不正确，请填写完整的 http 或 https 地址。');
+    let apiKey = typeof payload?.apiKey === 'string' ? payload.apiKey.trim() : '';
+    if (apiKey && !validString(apiKey, 4096)) throw new Error('API Key 格式不正确。');
+    if (!apiKey) {
+      const current = await this.load();
+      const same = entry => { try { return entry?.api === api && new URL(entry.baseUrl).href.replace(/\/$/u, '') === baseUrl; } catch { return false; } };
+      const saved = current.providers[payload?.provider], draft = current.drafts?.[payload?.draftId];
+      apiKey = (same(saved) && saved.apiKey) || (same(draft) && draft.apiKey) || '';
+    }
+    if (!apiKey) throw new Error('请先填写 API Key。');
+    return listModels({ api, baseUrl, apiKey, network: payload?.network === 'funnel-public' ? 'funnel-public' : 'default' }, this.fetch);
   }
   async configure(payload) { return lockedSerial(this.directory, () => this.configureLocked(payload)); }
   async configureLocked(payload) {

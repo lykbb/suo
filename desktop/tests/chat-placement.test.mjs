@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { linkedContext } from '../src/cardLinks.ts';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { hideSystemRecord } from '../src/messageError.mjs';
@@ -21,7 +22,7 @@ function harness({ nodes = [], attachments = [] } = {}) {
   const calls = [], entrances = new Map(), session = { running: null };
   let recorded = 0;
   const context = {
-    exports: {}, crypto: { randomUUID }, AbortController, setTimeout, clearTimeout, session, entrances, STAGGER: 0.06, hideSystemRecord,
+    exports: {}, crypto: { randomUUID }, AbortController, setTimeout, clearTimeout, session, entrances, STAGGER: 0.06, hideSystemRecord, linkedContext,
     app: { get: () => state, set: patch => { state = { ...state, ...patch }; } },
     update: change => { state = { ...state, workspace: change(state.workspace) }; },
     record: () => { recorded++; }, flush: async () => {}, notice: () => {}, LOCAL_COMMANDS: {},

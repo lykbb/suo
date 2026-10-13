@@ -6,7 +6,9 @@
 .model-settings form { display: grid; gap: 14px; }
 .model-settings label { display: grid; gap: 7px; font-size: 12px; color: var(--text-3); min-width: 0; }
 .model-settings input, .model-settings select { width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--text); font: inherit; font-size: 14px; }
-.model-settings-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.model-settings-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+.model-settings-fields > label { grid-template-rows: max-content 44px; align-content: start; }
+.model-settings-fields > label > input, .model-settings-fields > label > select { min-width: 0; height: 44px; margin: 0; padding: 10px 12px; line-height: 20px; }
 .model-settings-buttons { display: flex; gap: 10px; justify-content: flex-end; }
 .model-setting-error, .message-error { color: var(--danger); font-size: 13px; }
 @media (max-width: 550px) { .model-settings-fields { grid-template-columns: 1fr; } }
@@ -23,3 +25,15 @@
 .model-settings .model-network-option input { flex:0 0 16px; width:16px; height:16px; padding:0; margin:0; accent-color:var(--text); }
 .model-network-option span { flex:1; }
 .connected-models button small.failed { color:var(--danger); font-weight:600; }
+.model-presets-field { display:grid; gap:7px; }
+.model-field-label { font-size:12px; color:var(--text-3); }
+.model-presets { display:flex; flex-wrap:wrap; gap:6px; }
+.model-presets button { font-size:12px; padding:6px 11px; border:1px solid var(--line); border-radius:999px; background:var(--surface); color:var(--text-2); transition:border-color .15s,background-color .15s,color .15s; }
+.model-presets button:hover:not(:disabled) { border-color:var(--line-strong); color:var(--text); }
+.model-presets button.active { border-color:var(--text-2); background:var(--surface-3); color:var(--text); font-weight:500; }
+.model-service-note, .model-list-note { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:-4px 0 0; font-size:12px; line-height:1.6; }
+.model-service-note span, .model-list-note span { min-width:0; overflow-wrap:anywhere; }
+.model-link { flex-shrink:0; padding:0; border:0; background:none; font-size:12px; color:var(--text-2); text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+.model-link:hover:not(:disabled) { color:var(--text); }
+.model-link:disabled { opacity:.5; cursor:default; }
+@media (prefers-reduced-motion: reduce) { .model-presets button { transition:none; } }

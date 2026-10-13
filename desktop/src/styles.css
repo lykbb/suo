@@ -1,7 +1,7 @@
 /* Design tokens. Every color, size and shadow below comes from this list.
    Text and controls use neutral grayscale; imported media keeps its original colors. */
 :root{
-  --bg:#ffffff; --home:#ffffff; --surface:#ffffff; --surface-2:#fafafa; --surface-3:#f2f2f2;
+  --bg:#f6f6f4; --home:#ffffff; --surface:#ffffff; --surface-2:#fafafa; --surface-3:#f2f2f2;
   --line:#e5e5e5; --line-strong:#d4d4d4;
   --text:#171717; --text-2:#404040; --text-3:#666666;
   --accent:#171717; --accent-strong:#262626; --accent-ink:#404040; --accent-soft:#f2f2f2;
@@ -9,6 +9,7 @@
   --select:#171717; --danger:#171717; --edge:#8a8a8a; --on-ink:#ffffff;
   --selection-wash:rgb(0 0 0 / .04); --surface-overlay:rgb(255 255 255 / .94);
   --shadow-1:0 1px 2px rgb(0 0 0 / .05),0 2px 8px rgb(0 0 0 / .04);
+  --shadow-hover:0 2px 4px rgb(0 0 0 / .05),0 8px 20px rgb(0 0 0 / .07);
   --shadow-2:0 2px 6px rgb(0 0 0 / .06),0 12px 32px rgb(0 0 0 / .08);
   --shadow-3:0 4px 12px rgb(0 0 0 / .08),0 24px 60px rgb(0 0 0 / .16);
   --r-sm:6px; --r-md:10px; --r-lg:14px; --r-xl:18px;
@@ -70,20 +71,29 @@ input,textarea{border:1px solid var(--line);background:var(--surface)}
 .react-flow__node-card,.react-flow__node-group{padding:0;border:0;background:transparent}
 .react-flow__node-card{width:258px}
 .react-flow__node-group{z-index:-1}
-.react-flow__handle{width:10px;height:10px;background:var(--surface);border:1.5px solid var(--line-strong);opacity:0;transition:opacity .15s,border-color .15s}
-.react-flow__node:hover .react-flow__handle,.react-flow__node.selected .react-flow__handle{opacity:1}
-.react-flow__handle:hover{border-color:var(--select)}
+/* Connection dots: a small dot inside a larger invisible target, so it is easy to grab. */
+.react-flow__handle{width:24px;height:24px;min-width:0;min-height:0;background:transparent;border:0;border-radius:50%;z-index:4;opacity:0;transition:opacity .15s}
+.react-flow__handle::after{content:'';position:absolute;inset:6px;box-sizing:border-box;border-radius:50%;background:var(--surface);border:1.5px solid var(--line-strong);transition:transform .15s,border-color .15s,background-color .15s}
+.react-flow__node:hover .react-flow__handle,.react-flow__node.selected .react-flow__handle,.connecting .react-flow__handle{opacity:1}
+.react-flow__handle:hover::after,.react-flow__handle.connectingfrom::after,.react-flow__handle.connectingto::after{border-color:var(--select);background:var(--select);transform:scale(1.2)}
 .react-flow__resize-control.handle.card-resize-handle{width:8px;height:8px;border-radius:2px;background:var(--surface);border:1.5px solid var(--select)}
 .react-flow__resize-control.line.card-resize-line{border-color:transparent}
 .react-flow__attribution{bottom:2px!important;right:6px!important;background:transparent!important;font-size:10px!important;opacity:.7}
 .react-flow__attribution a{color:var(--text-3)!important}
 
 /* Cards */
-.work-card{width:100%;height:100%;min-height:112px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:14px 16px;display:flex;flex-direction:column;gap:8px;overflow:hidden;user-select:none;transition:box-shadow .2s,border-color .15s}
-.work-card:hover{border-color:var(--line-strong)}
+.work-card{width:100%;height:100%;min-height:112px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--shadow-1);padding:14px 16px;display:flex;flex-direction:column;gap:8px;overflow:hidden;user-select:none;transition:box-shadow .2s,border-color .15s,translate .2s cubic-bezier(.2,.8,.2,1)}
+/* Cards sit like paper on a desk: a hover lifts one slightly, a selected one gets a soft halo. */
+.work-card:hover{border-color:var(--line-strong);box-shadow:var(--shadow-hover);translate:0 -1px}
 .work-card.note{background:var(--note);border-color:var(--note-line);color:var(--note-text)}
-.work-card.selected{border-color:var(--select);box-shadow:0 0 0 1px var(--select),var(--shadow-1)}
-.react-flow__node.dragging .work-card{box-shadow:var(--shadow-2)}
+.work-card.selected{border-color:color-mix(in srgb,var(--select) 70%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--select) 10%,transparent),var(--shadow-hover)}
+/* A dragged card moves on its own layer, so the cards, lines and dots underneath are not repainted
+   every frame; its shadow switches at once instead of animating while it moves. */
+.react-flow__node.dragging{will-change:transform}
+.react-flow__node.dragging .work-card{box-shadow:var(--shadow-2);translate:none;transition:none}
+.connecting .work-card,.connecting .work-card:hover{transition:none;translate:none}
+.connecting .react-flow__node-card:not(.connect-from) .work-card:hover{border-color:var(--select)}
+.react-flow__connectionline{will-change:transform}
 .work-card.editing{border-color:var(--select);box-shadow:0 0 0 1px var(--select),var(--shadow-2);cursor:text}
 .card-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
 .card-title{display:flex;align-items:center;gap:6px;min-width:0;font-size:var(--fs-1);font-weight:500;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -362,3 +372,22 @@ html.suo-text-gesture iframe{ pointer-events:none!important; }
 .react-flow__edge-textbg{fill:var(--surface)}
 /* Keep drawing tools neutral without changing the scene or color palette swatches. */
 .drawing-panel .excalidraw{--color-primary:var(--text);--color-primary-darker:var(--text-2);--color-primary-darkest:var(--text);--color-primary-hover:var(--text-2);--color-primary-light:var(--surface-3);--color-primary-light-darker:var(--line);--color-selection:var(--text);--color-surface-high:var(--surface-3);--color-surface-mid:var(--surface-2);--color-surface-low:var(--surface-3);--color-surface-lowest:var(--surface);--color-on-surface:var(--text);--color-brand-hover:var(--text-2);--color-brand-active:var(--text);--color-on-primary-container:var(--text);--color-surface-primary-container:var(--surface-3);--color-border-outline:var(--text-3);--color-border-outline-variant:var(--line-strong);--island-bg-color:var(--surface);--popup-secondary-bg-color:var(--surface-2);--popup-text-color:var(--text);--popup-text-inverted-color:var(--on-ink);--input-bg-color:var(--surface);--button-hover-bg:var(--surface-3);--button-active-bg:var(--surface-3);--color-icon-white:var(--on-ink);--color-logo-icon:var(--text);--color-logo-text:var(--text);--link-color:var(--text-2);--select-highlight-color:var(--text);--color-slider-track:var(--line-strong)}
+/* Press feedback: a control gives a little under the pointer and springs back on release. */
+.suo-app button:not(:disabled):not(.panel-edge):active{scale:.95}
+.suo-app :is(.library-card-main,.message-ask-option,.welcome-history,.welcome-setup):not(:disabled):active{scale:.985}
+@media(prefers-reduced-motion:reduce){.work-card:hover{translate:none}.suo-app button:active{scale:none!important}}
+:root[data-motion="reduce"] .work-card:hover{translate:none}
+:root[data-motion="reduce"] .suo-app button:active{scale:none!important}
+
+/* Alignment lines while dragging, and the relation written on a connection. */
+.alignment-guide{position:absolute;z-index:1000;pointer-events:none;--guide-color:rgb(255 90 78 / .5)}
+.alignment-guide.x{width:0;border-left:1px dashed var(--guide-color);margin-left:-.5px}
+.alignment-guide.y{height:0;border-top:1px dashed var(--guide-color);margin-top:-.5px}
+.react-flow__edge-text{font-size:11px;font-weight:500}
+.react-flow__edge-textbg{stroke:var(--line);stroke-width:1px}
+.edge-label-editor{position:fixed;z-index:30000;translate:-50% 10px;display:grid;gap:8px;width:264px;padding:10px;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--shadow-2)}
+.edge-relations{display:flex;flex-wrap:wrap;gap:5px}
+.edge-relations button{padding:4px 9px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:12px;color:var(--text-2)}
+.edge-relations button:hover,.edge-relations button.active{border-color:var(--line-strong);background:var(--surface-3);color:var(--text)}
+.edge-label-editor input{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface-2);color:var(--text);font-size:12px;user-select:text;-webkit-user-select:text}
+.edge-label-editor input:focus{outline:0;border-color:var(--line-strong)}

@@ -36,6 +36,7 @@ async function request(method, payload = {}) {
     case 'models.list': return connections.list();
     case 'models.configure': if (chat.active) throw new Error('请先停止当前回复。'); return connections.configure(payload);
     case 'models.check': return chat.check(payload);
+    case 'models.discover': return connections.discover(payload);
     case 'native.model-config': if (chat.active) throw new Error('请先停止当前回复。'); return connections.import(payload.path);
     case 'prompt.send': return chat.start(payload);
     case 'prompt.abort': return chat.abort(payload.runId);

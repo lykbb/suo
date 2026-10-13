@@ -21,7 +21,7 @@ function harness() {
   const frames = new Map(), timers = new Map(), notices = [];
   const session = { dirty: false, version: 1, saving: null };
   const context = {
-    exports: {}, session, saveTimer: undefined, nodeFrame: 0, queuedNodes: undefined, groupResizeGesture: undefined, bindings: {},
+    exports: {}, session, saveTimer: undefined, nodeFrame: 0, queuedNodes: undefined, groupResizeGesture: undefined, bindings: {}, alignDrag: () => {},
     applyNodeChanges, cleanNodes, record() {}, notice: value => notices.push(value),
     // Each save carries a request id and a copy of the state, as in the browser.
     crypto: { randomUUID }, structuredClone,

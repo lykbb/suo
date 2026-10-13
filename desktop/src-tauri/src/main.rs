@@ -273,7 +273,7 @@ async fn open_external(url: String) -> Result<(), String> {
 async fn bridge_request(method: String, payload: Value, state: State<'_, Arc<Bridge>>) -> Reply {
     // Explicit model requests only; no generic shell or arbitrary path reading.
     if !["workspace.list", "workspace.create", "workspace.load", "workspace.save", "workspace.trash", "workspace.remove", "workspace.restore", "workspace.purge", "asset.get",
-        "models.list", "models.configure", "models.check", "prompt.send", "prompt.abort", "ui.reply", "skills.list", "skills.get", "skills.parse", "skills.save", "templates.list", "templates.get", "templates.save"].contains(&method.as_str()) {
+        "models.list", "models.configure", "models.check", "models.discover", "prompt.send", "prompt.abort", "ui.reply", "skills.list", "skills.get", "skills.parse", "skills.save", "templates.list", "templates.get", "templates.save"].contains(&method.as_str()) {
         return Err("这个操作未向界面开放。".into());
     }
     let bridge = state.inner().clone();

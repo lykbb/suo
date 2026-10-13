@@ -6,12 +6,18 @@ import { fileKind, MAX_FILE_BYTES, MAX_TEXT_CHARS, MAX_HTML_CHARS, MAX_TEXT_BYTE
 import { assertSaveRequest, committedReplay, committedState, workspaceAssetIds } from '../bridge/saveReceipt.mjs';
 
 export const native = isTauri();
+// The desktop host rejects with plain text; turn it into an Error so the interface shows the actual
+// reason instead of a generic one.
+async function call<T>(command: string, args?: Record<string, unknown>) {
+  try { return await invoke<T>(command, args); }
+  catch (error) { throw error instanceof Error ? error : new Error(String(error || '操作失败，请重试。')); }
+}
 export async function openExternal(url: string) {
   if (url.length > 8192 || /[\u0000-\u001f\u007f]/u.test(url)) throw new Error('来源网址格式不正确。');
   let value: URL;
   try { value = new URL(url); } catch { throw new Error('来源网址格式不正确。'); }
   if (!['http:', 'https:'].includes(value.protocol) || value.username || value.password) throw new Error('只支持打开不含账号密码的网页来源。');
-  if (native) await invoke('open_external', { url: value.href });
+  if (native) await call('open_external', { url: value.href });
   else window.open(value.href, '_blank', 'noopener,noreferrer');
 }
 const prefix = 'suo-desktop-preview:';
@@ -41,14 +47,14 @@ function ensureEvents() {
 
 export async function request<T>(method: string, payload: Record<string, unknown> = {}): Promise<T> {
   if (native) {
-    const result = await invoke<T>('bridge_request', { method, payload });
+    const result = await call<T>('bridge_request', { method, payload });
     if (method === 'asset.get') {
       const asset = result as Asset;
       if (['image', 'pdf', 'video', 'audio'].includes(asset.kind)) asset.sourceUrl = convertFileSrc(asset.id, 'suo-file');
     }
     return result;
   }
-  if (['models.list', 'models.configure', 'models.check', 'prompt.send', 'prompt.abort', 'ui.reply', 'skills.list', 'skills.get', 'skills.parse', 'skills.save', 'templates.list', 'templates.get', 'templates.save'].includes(method)) {
+  if (['models.list', 'models.configure', 'models.check', 'models.discover', 'prompt.send', 'prompt.abort', 'ui.reply', 'skills.list', 'skills.get', 'skills.parse', 'skills.save', 'templates.list', 'templates.get', 'templates.save'].includes(method)) {
     if (method.startsWith('prompt.')) await ensureEvents();
     const response = await fetch('/__suo/request', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Suo-Token': localToken() }, body: JSON.stringify({ method, payload }) });
     if (!response.ok && response.status !== 400) throw new Error('本地模型连接失败，请刷新页面。');
@@ -127,12 +133,12 @@ export async function onNativeClose(callback: () => void) {
   if (!native) return () => {};
   return listen('native-close', callback);
 }
-export async function finishClose() { if (native) await invoke('finish_close'); }
-export async function chooseFiles() { return native ? invoke<Asset[]>('choose_files') : []; }
-export async function chooseModelConfig() { return native ? invoke<ModelCatalog | null>('choose_model_config') : null; }
+export async function finishClose() { if (native) await call('finish_close'); }
+export async function chooseFiles() { return native ? call<Asset[]>('choose_files') : []; }
+export async function chooseModelConfig() { return native ? call<ModelCatalog | null>('choose_model_config') : null; }
 // Exports a document: a save dialog in the desktop App, a download in the browser preview.
 export async function saveText(name: string, text: string) {
-  if (native) return invoke<boolean>('save_text', { name, text });
+  if (native) return call<boolean>('save_text', { name, text });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(new Blob([text], { type: 'text/markdown;charset=utf-8' }));
   link.download = name; link.click();
@@ -143,11 +149,11 @@ export async function saveText(name: string, text: string) {
 type Found = { engine: string; results: { title: string; url: string; snippet: string }[] };
 export async function browserSearch(query: string, engine: string) {
   if (!native) throw new Error('联网搜索需要在桌面 App 中使用。');
-  return invoke<Found>('browser_search', { query, engine });
+  return call<Found>('browser_search', { query, engine });
 }
 export async function browserRead(url: string) {
   if (!native) throw new Error('浏览器读取需要在桌面 App 中使用。');
-  return invoke<{ title: string; url: string; text: string }>('browser_read', { url });
+  return call<{ title: string; url: string; text: string }>('browser_read', { url });
 }
 export async function browserFiles(files: File[]): Promise<Asset[]> {
   if (files.length > 20) throw new Error('一次最多导入 20 份资料，请分批添加。');

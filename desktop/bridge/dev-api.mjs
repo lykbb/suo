@@ -5,7 +5,7 @@ import { dirname, resolve } from 'node:path';
 import { realpathSync } from 'node:fs';
 import { JsonLines } from './rpc.mjs';
 
-const METHODS = new Set(['models.list', 'models.configure', 'models.check', 'prompt.send', 'prompt.abort', 'ui.reply', 'skills.list', 'skills.get', 'skills.parse', 'skills.save', 'templates.list', 'templates.get', 'templates.save']);
+const METHODS = new Set(['models.list', 'models.configure', 'models.check', 'models.discover', 'prompt.send', 'prompt.abort', 'ui.reply', 'skills.list', 'skills.get', 'skills.parse', 'skills.save', 'templates.list', 'templates.get', 'templates.save']);
 export function devApi() {
   const token = randomBytes(32).toString('hex');
   const equalToken = value => typeof value === 'string' && value.length === token.length && timingSafeEqual(Buffer.from(value), Buffer.from(token));

@@ -60,7 +60,7 @@ function formatBoard(board) {
     lines.push(`- [${card.id}] ${card.title}（${tags}）${where(card)}${card.excerpt ? `\n  ${card.excerpt.replace(/\s+/gu, ' ')}` : ''}`);
   }
   if (board.groups.length) lines.push('分组：', ...board.groups.map(group => `- [${group.id}] ${group.title}（${['分组', group.parentId ? `所属分组 [${group.parentId}]` : '画布顶层', ...looks(group)].filter(Boolean).join('，')}）${where(group)}`));
-  if (board.links.length) lines.push('连线：', ...board.links.map(link => `- ${link.from} → ${link.to}${link.label ? `（${link.label}）` : ''}`));
+  if (board.links.length) lines.push('连线：', ...board.links.map(link => `- ${link.id ? `[连线 ${link.id}] ` : ''}${link.from}${link.sourceHandle ? `.${link.sourceHandle}` : ''} → ${link.to}${link.targetHandle ? `.${link.targetHandle}` : ''}${link.label ? `（${link.label}）` : ''}`));
   if (board.next != null) lines.push(`[卡片或分组目录还有内容，用 board_read offset=${board.next} 继续；当前仅返回目录和摘要，不代表已读完资料正文。]`);
   if (board.groupsOmitted) lines.push(`[另有 ${board.groupsOmitted} 个分组未列出。]`);
   return lines.join('\n');
@@ -126,7 +126,7 @@ export function createTools({ ui, skillsRoot, supportsImages = false, fetchImpl,
     },
     {
       name: 'board_edit', label: '调整画布',
-      description: '用户要求修改、美化或整理画布时使用，画布上的卡片、资料和分组都可以调整。update 改标题或正文（资料卡片只能改标题）；style 改颜色、标签、置顶；move 移动一张卡片或分组；resize 改大小；arrange 把同一层的一组卡片（都在画布上，或都在同一个分组里）排成网格、横排或竖排，分组会随之调整大小；group 把卡片归入新分组；ungroup 拆开分组；link/unlink 增删连线；remove 删除卡片或分组（删除分组时里面的卡片保留）。整理画布时先 board_read，再组合使用这些操作。删除用户自己的卡片或资料，必须是用户明确要求的。所有调整都能用 ⌘Z 撤销。',
+      description: '用户要求修改、美化或整理画布时使用，画布上的卡片、资料和分组都可以调整。update 改标题或正文（资料卡片只能改标题）；style 改颜色、标签、置顶；move 移动一张卡片或分组；resize 改大小；arrange 把同一层的一组卡片（都在画布上，或都在同一个分组里）排成网格、横排或竖排，分组会随之调整大小；group 把卡片归入新分组；ungroup 拆开分组；link/unlink 增删连线。unlink 指定 edgeId 只删该线；同一对卡片有多条连线时必须先用 ask_user 确认具体哪条，再按 edgeId 删除，禁止自行猜测或使用 all；只有用户明确要求全部断开时才能 all:true；remove 删除卡片或分组（删除分组时里面的卡片保留）。整理画布时先 board_read，再组合使用这些操作。删除用户自己的卡片或资料，必须是用户明确要求的。所有调整都能用 ⌘Z 撤销。',
       parameters: {
         type: 'object', required: ['changes'],
         properties: { changes: { type: 'array', minItems: 1, maxItems: 40, items: { type: 'object', required: ['action'], properties: {
@@ -144,6 +144,8 @@ export function createTools({ ui, skillsRoot, supportsImages = false, fetchImpl,
           x: { type: 'number', description: 'move 的目标位置（画布坐标，同 board_read 的 @x,y）' }, y: { type: 'number' },
           width: { type: 'number', description: 'resize 的宽度' }, height: { type: 'number', description: 'resize 的高度' },
           from: { type: 'string' }, to: { type: 'string' }, label: { type: 'string' },
+          edgeId: { type: 'string', description: 'unlink 精确删除的连线编号，来自 board_read 的连线目录' },
+          all: { type: 'boolean', description: 'unlink 全部断开 from/to 两张卡片之间的连线；只在用户明确要求全部断开时设为 true' },
         } } } },
       },
       async execute(_id, params, signal) {

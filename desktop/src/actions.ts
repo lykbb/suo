@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 import { addEdge, applyEdgeChanges, applyNodeChanges, type Connection, type EdgeChange, type NodeChange, type ReactFlowInstance, type Viewport } from '@xyflow/react';
 import { browserFiles, chooseFiles, finishClose, native, request, saveText } from './bridge';
-import { boardViewport, cleanNodes, freeSpot, groupCards, imageGeometry, openArea, ungroupCards } from './geometry';
+import { boardViewport, cleanNodes, freeSpot, groupCards, imageGeometry, nodeBoxes, openArea, ungroupCards } from './geometry';
 import { orderCards, orderPanels } from './layers';
 import { withDrawingCard } from './drawingModel';
 import { prepareMaterial, type Material } from './materialContext';
@@ -11,6 +11,8 @@ import { app, hasThreadOf, isWelcomeOf, type Popup } from './state';
 import type { Asset, BoardTask, BridgeEvent, Card, CardData, Message, PanelName, Rect, Workspace, WorkspaceSummary } from './types';
 import { handleUiRequest } from './agentTools';
 import { metadataPatch, type MetadataChange } from './cardMetadata';
+import { alignTo } from './alignment';
+import { linkedContext } from './cardLinks';
 import { hideSystemRecord, messageDisplayText } from './messageError.mjs';
 import { replyWithSources } from './sourceLinks';
 import { addCardsToGroup, captureGroupResize, groupSelectionPlan, reparentDraggedCards, resizeGroupCards, restoreGroupResize, selectedGroupIds, type GroupResizeSnapshot } from './grouping';
@@ -351,6 +353,7 @@ export function ungroupSelected() {
 // Drag start already recorded the gesture. Membership and bounds join that same undo step.
 export function finishNodeDrag(_event: unknown, node: Card, draggedNodes: Card[] = [node]) {
   drainNodeChanges();
+  if (app.get().guides?.length) app.set({ guides: [] });
   if (app.get().sessionManaging) return;
   const workspace = app.get().workspace;
   if (!workspace) return;
@@ -634,6 +637,8 @@ export async function send(text = app.get().workspace?.draft ?? '', { land = tru
   const message = text.trim() || '帮我整理这些资料。';
   const workspace = state.workspace, referred = new Set(retryQuestion?.cardIds ?? []);
   const selected = workspace.nodes.filter(node => (retryMessage ? referred.has(node.id) : node.selected) && node.data.kind !== 'group');
+  // Cards linked to the selected ones come along, with how they relate.
+  const { related, relations } = linkedContext(workspace.nodes, workspace.edges ?? [], selected.map(card => card.id));
   const messageId = crypto.randomUUID();
   const logicalRequestId = retryMessage?.logicalRequestId ?? crypto.randomUUID();
   const task = retryMessage ? retryQuestion?.boardTask : boardTask;
@@ -652,11 +657,11 @@ export async function send(text = app.get().workspace?.draft ?? '', { land = tru
     ...value, title: !value.titleCustomized && value.title === '新会话' ? shortTitle(message) : value.title,
     draft: preserveDraft ? value.draft : '', draftAttachments: preserveDraft ? value.draftAttachments : [],
     nodes: [...value.nodes, ...landed],
-    messages: [...value.messages, ...(!retryMessage ? [{ id: crypto.randomUUID(), role: 'user' as const, text: message, logicalRequestId, ...taskScope, cardIds: [...selected.map(card => card.id), ...files] }] : []), { id: messageId, role: 'assistant', logicalRequestId, ...(retryMessage ? { retryOf: retryMessage.id, operationReceipts } : {}), text: '' }],
+    messages: [...value.messages, ...(!retryMessage ? [{ id: crypto.randomUUID(), role: 'user' as const, text: message, logicalRequestId, ...taskScope, cardIds: [...selected.map(card => card.id), ...files], ...(related.length ? { relatedIds: related.map(card => card.id) } : {}) }] : []), { id: messageId, role: 'assistant', logicalRequestId, ...(retryMessage ? { retryOf: retryMessage.id, operationReceipts } : {}), text: '' }],
   }));
   try {
     const context: Material[] = [];
-    const cards = [...selected.map(card => ({ id: card.id, title: card.data.title, content: card.data.content, kind: card.data.asset?.kind ?? card.data.kind, asset: card.data.asset })), ...assets.map((asset, index) => ({ id: landed[index]?.id ?? asset.id, title: asset.name, content: '', kind: asset.kind, asset }))];
+    const cards = [...[...selected, ...related].map(card => ({ id: card.id, title: card.data.title, content: card.data.content, kind: card.data.asset?.kind ?? card.data.kind, asset: card.data.asset })), ...assets.map((asset, index) => ({ id: landed[index]?.id ?? asset.id, title: asset.name, content: '', kind: asset.kind, asset }))];
     const preparedIds = new Set<string>();
     const timeout = setTimeout(() => run.preparing?.abort(new Error('资料准备超时，请拆分后重试。')), 60000);
     try {
@@ -670,6 +675,7 @@ export async function send(text = app.get().workspace?.draft ?? '', { land = tru
       }
     }
     finally { clearTimeout(timeout); }
+    if (relations.length) context.push({ title: '卡片之间的连线（箭头表示方向，括号里是关系）', content: relations.join('\n') });
     if (session.running !== run || run.cancelRequested) return;
     const prepared = prepareHistory(workspace.messages.map(item => ({ role: item.role, text: item.role === 'assistant' ? hideSystemRecord(item.text) : item.text, demo: item.demo, cancelled: item.cancelled, error: !!item.error && !item.incomplete })));
     const scopeNote = cards.length ? `本轮已读取 ${preparedIds.size}/${cards.length} 份资料${cards.length > preparedIds.size ? '，其余正文未发送，可继续按目录读取' : ''}` : '';
@@ -703,9 +709,9 @@ export async function stop() {
 export async function copyMessage(id: string) {
   const message = app.get().workspace?.messages.find(item => item.id === id);
   const text = message?.role === 'assistant' ? replyWithSources(messageDisplayText(message), message.steps) : messageDisplayText(message);
-  if (!text) return;
-  try { await navigator.clipboard.writeText(text); notice('已复制。'); }
-  catch { notice('复制失败，请选中文字后手动复制。'); }
+  if (!text) return false;
+  try { await navigator.clipboard.writeText(text); notice('已复制。'); return true; }
+  catch { notice('复制失败，请选中文字后手动复制。'); return false; }
 }
 
 // Retry the logical request without removing previous output or the board actions it completed.
@@ -899,9 +905,65 @@ export function drainNodeChanges() {
   const queued = queuedNodes; queuedNodes = undefined;
   if (queued && app.get().workspace?.id === queued.id) applyNodes(queued.changes);
 }
+// Hold ⌘ while dragging to place a card freely, without settling onto alignments.
+let freeDrag = false;
+if (typeof window !== 'undefined') {
+  window.addEventListener('keydown', event => { if (event.key === 'Meta') freeDrag = true; });
+  window.addEventListener('keyup', event => { if (event.key === 'Meta') freeDrag = false; });
+  window.addEventListener('blur', () => { freeDrag = false; });
+}
+// While a single card is dragged it settles onto nearby edges and middles of the cards beside it.
+function alignDrag(changes: NodeChange<Card>[]) {
+  const moving = changes.filter(change => change.type === 'position' && change.dragging && change.position);
+  const nodes = app.get().workspace?.nodes ?? [];
+  if (moving.length !== 1 || freeDrag) { if (app.get().guides?.length) app.set({ guides: [] }); return; }
+  const change = moving[0] as NodeChange<Card> & { type: 'position'; position: { x: number; y: number } };
+  const card = nodes.find(node => node.id === change.id);
+  if (!card) return;
+  const siblings = nodes.filter(node => node.id !== card.id && node.parentId === card.parentId && !node.hidden && !node.selected);
+  const size = nodeBoxes([card])[0], boxes = nodeBoxes(siblings.map(node => ({ ...node, parentId: undefined })));
+  const zoom = bindings.flow?.getViewport().zoom ?? 1;
+  const { dx, dy, guides } = alignTo({ x: change.position.x, y: change.position.y, width: size.width, height: size.height }, boxes, 6 / zoom);
+  change.position = { x: change.position.x + dx, y: change.position.y + dy };
+  // Cards inside a group are positioned relative to it; the lines are drawn on the board.
+  const parent = card.parentId ? nodeBoxes(nodes)[nodes.findIndex(node => node.id === card.parentId)] : null;
+  app.set({ guides: guides.map(guide => ({ ...guide, at: guide.at + (parent ? (guide.axis === 'x' ? parent.x : parent.y) : 0), from: guide.from + (parent ? (guide.axis === 'x' ? parent.y : parent.x) : 0), to: guide.to + (parent ? (guide.axis === 'x' ? parent.y : parent.x) : 0) })) });
+}
+
+// Lines up the selected cards on one edge or on the middle of their overall extent, like slide
+// editors, as one undo step. A card inside a selected group moves with its group, not on its own.
+export function alignSelected(side: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') {
+  const nodes = app.get().workspace?.nodes ?? [], boxes = nodeBoxes(nodes);
+  const chosen = new Set(nodes.filter(node => node.selected).map(node => node.id));
+  // Descendants of any selected group travel with it, including through unselected nested groups.
+  const carried = new Set(nodes.filter(node => node.selected && node.data.kind === 'group').flatMap(group =>
+    (captureGroupResize(nodes, group.id)?.nodes ?? []).filter(node => node.id !== group.id).map(node => node.id)));
+  const picked = nodes.map((node, index) => ({ node, box: boxes[index] })).filter(({ node }) => chosen.has(node.id) && !carried.has(node.id));
+  if (picked.length < 2) { notice('选中两张以上卡片，再对齐。'); return; }
+  const left = Math.min(...picked.map(({ box }) => box.x)), right = Math.max(...picked.map(({ box }) => box.x + box.width));
+  const top = Math.min(...picked.map(({ box }) => box.y)), bottom = Math.max(...picked.map(({ box }) => box.y + box.height));
+  const moved = new Map(picked.map(({ node, box }) => {
+    const at = side === 'left' ? { x: left, y: box.y } : side === 'right' ? { x: right - box.width, y: box.y } : side === 'center' ? { x: (left + right - box.width) / 2, y: box.y }
+      : side === 'top' ? { x: box.x, y: top } : side === 'bottom' ? { x: box.x, y: bottom - box.height } : { x: box.x, y: (top + bottom - box.height) / 2 };
+    const parent = node.parentId ? boxes[nodes.findIndex(item => item.id === node.parentId)] : null;
+    return [node.id, parent ? { x: at.x - parent.x, y: at.y - parent.y } : at];
+  }));
+  record();
+  update(state => ({ ...state, nodes: state.nodes.map(node => moved.has(node.id) ? { ...node, position: moved.get(node.id)! } : node) }));
+}
+
+// The relation written on a connection; an empty one clears it.
+export function labelEdge(id: string, label: string) {
+  const text = label.trim().slice(0, 40);
+  record();
+  update(state => ({ ...state, edges: state.edges.map(edge => edge.id !== id ? edge : text ? { ...edge, label: text } : (({ label: _label, ...rest }) => rest)(edge)) }));
+  app.set({ edgeEditor: null });
+}
+
 export function onNodesChange(changes: NodeChange<Card>[]) {
   const id = app.get().workspace?.id;
   if (!id) return;
+  alignDrag(changes);
   const moving = changes.every(change => change.type === 'position' || change.type === 'dimensions');
   if (!moving) {
     drainNodeChanges();
@@ -918,8 +980,13 @@ export function onEdgesChange(changes: EdgeChange[]) {
   update(state => ({ ...state, edges: applyEdgeChanges(changes, state.edges) }), { persist });
 }
 export function connect(connection: Connection) {
+  const workspace = app.get().workspace;
+  if (!workspace || connection.source === connection.target) return;
+  // Different port pairs may have different relations; repeated gestures on the same pair do not.
+  const edges = addEdge({ ...connection, type: 'smoothstep', style: { stroke: '#a8957f', strokeWidth: 1.5 } }, workspace.edges);
+  if (edges.length === workspace.edges.length) return;
   record();
-  update(state => ({ ...state, edges: addEdge({ ...connection, type: 'smoothstep', style: { stroke: '#a8957f', strokeWidth: 1.5 } }, state.edges) }));
+  update(state => ({ ...state, edges }));
 }
 export function saveViewport(viewport: Viewport) { update(state => ({ ...state, viewport })); }
 export function panelChange(name: PanelName, rect: Rect) { update(state => ({ ...state, panels: { ...state.panels, [name]: rect } })); }

@@ -1,4 +1,5 @@
 import { createStore } from './store';
+import type { Guide } from './alignment';
 import type { Asset, Workspace, WorkspaceSummary } from './types';
 
 export type Menu = { x: number; y: number; point: { x: number; y: number } };
@@ -27,6 +28,10 @@ export type AppState = {
   dragOver: boolean;
   historyVersion: number;
   presence: Presence | null;
+  // Alignment lines shown while a card is dragged, in board coordinates.
+  guides: Guide[];
+  // The connection whose relation is being written, and where to show the box.
+  edgeEditor: { id: string; x: number; y: number } | null;
   // Hydrated view of workspace.draftAttachments; they become cards with the first message.
   attachments: Asset[];
 };
@@ -34,7 +39,7 @@ export type AppState = {
 export const app = createStore<AppState>({
   workspace: null, sessions: [], stage: typeof window === 'undefined' ? { width: 1300, height: 800 } : { width: window.innerWidth, height: window.innerHeight - 52 }, saveStatus: '已保存', busy: false, sessionManaging: false, toast: '',
   popup: '', menu: null, editor: null, preview: null, sketchPreview: false, settingsTab: 'appearance', threadOpen: true, drawingOpen: false, tool: 'select',
-  dragOver: false, historyVersion: 0, presence: null, attachments: [],
+  dragOver: false, historyVersion: 0, presence: null, guides: [], edgeEditor: null, attachments: [],
 });
 
 export const hasContentOf = (state: AppState) => !!state.workspace && (state.workspace.nodes.length > 0 || state.workspace.messages.length > 0);

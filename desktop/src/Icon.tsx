@@ -1,5 +1,9 @@
 import type { CSSProperties } from 'react';
 const paths: Record<string, string> = {
+  // One-click alignment of selected cards: the edge they line up on, and two cards against it.
+  alignLeft: 'M4 3v18M8 6h11v5H8zM8 14h7v5H8z', alignRight: 'M20 3v18M5 6h11v5H5zM9 14h7v5H9z',
+  alignTop: 'M3 4h18M6 8h5v11H6zM14 8h5v7h-5z', alignBottom: 'M3 20h18M6 5h5v11H6zM14 9h5v7h-5z',
+  alignCenter: 'M12 3v18M6 6h12v5H6zM8 14h8v5H8z', alignMiddle: 'M3 12h18M6 6h5v12H6zM14 8h5v8h-5z',
   // Marks of the built-in skills.
   bulb: 'M9 18h6M10 21h4M12 3a6 6 0 00-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0012 3z',
   chip: 'M8 8h8v8H8zM10 4v4m4-4v4m-4 8v4m4-4v4M4 10h4m-4 4h4m8-4h4m-4 4h4',

@@ -7,6 +7,7 @@ import ts from 'typescript';
 import { freeSpot, nodeBoxes, ungroupCards } from '../src/geometry.ts';
 import { CARD_COLORS, metadataPatch, readCardTags } from '../src/cardMetadata.ts';
 import { arrangeBoardNodes, classifyBoardNodes } from '../src/boardLayout.ts';
+import { disconnectEdges } from '../src/cardLinks.ts';
 
 // The real interface-side tool code, run against a plain session state.
 const source = await readFile(new URL('../src/agentTools.ts', import.meta.url), 'utf8');
@@ -25,7 +26,7 @@ function harness(nodes = [], edges = [], editor = null, extra = {}) {
     update: change => { state = { ...state, workspace: change(state.workspace) }; },
     record: () => records.push(1), frameBoard: () => {}, animateIn: () => {}, reveal: (box, label) => reveals.push({ box, label }), center: () => ({ x: 0, y: 0 }),
     newCard: (data, x, y) => ({ id: randomUUID(), type: 'card', position: { x, y }, style: { width: 258 }, data: { title: '新便签', content: '', kind: 'note', source: 'user', ...data } }),
-    freeSpot, nodeBoxes, ungroupCards, arrangeBoardNodes, classifyBoardNodes, CARD_COLORS, metadataPatch, readCardTags, readMaterial: async () => ({}), searchMaterials: async () => ({ hits: [] }), ...extra,
+    freeSpot, nodeBoxes, ungroupCards, arrangeBoardNodes, classifyBoardNodes, disconnectEdges, CARD_COLORS, metadataPatch, readCardTags, readMaterial: async () => ({}), searchMaterials: async () => ({ hits: [] }), ...extra,
   };
   vm.runInNewContext(code, context);
   return { ...context.exports, get: () => state.workspace, records, reveals };
@@ -156,4 +157,61 @@ test('a search stopped by a verification page is tried once more on the other en
   const invalid = harness([], [], null, { browserSearch: async () => { tries.push(1); throw new Error('请提供 200 字以内的搜索词。'); } });
   await assert.rejects(invalid.handleUiRequest('web.search', { query: 'x' }), /200 字/);
   assert.equal(tries.length, 1, 'a bad query is not retried');
+});
+
+
+const linkFixtures = () => [
+  { id: 'manual-left-left', source: 'aaaaaaaa', target: 'bbbbbbbb', sourceHandle: 'left', targetHandle: 'left', label: '支持' },
+  { id: 'manual-right-right', source: 'aaaaaaaa', target: 'bbbbbbbb', sourceHandle: 'right', targetHandle: 'right', label: '依赖' },
+  { id: 'reverse-top-bottom', source: 'bbbbbbbb', target: 'aaaaaaaa', sourceHandle: 'top', targetHandle: 'bottom', label: '验证' },
+  { id: 'unrelated', source: 'aaaaaaaa', target: 'cccccccc', label: '拆解为' },
+];
+const linkCards = () => ['aaaaaaaa', 'bbbbbbbb', 'cccccccc'].map(id => card(id));
+const linkIds = h => h.get().edges.map(edge => edge.id);
+
+test('Agent readBoard exposes exact edge IDs and stable port IDs alongside legacy null ports', async () => {
+  const h = harness(linkCards(), linkFixtures());
+  const result = await h.handleUiRequest('board.read', {});
+  assert.equal(JSON.stringify(result.links), JSON.stringify([
+    { id: 'manual-left-left', from: 'aaaaaaaa', to: 'bbbbbbbb', sourceHandle: 'left', targetHandle: 'left', label: '支持' },
+    { id: 'manual-right-right', from: 'aaaaaaaa', to: 'bbbbbbbb', sourceHandle: 'right', targetHandle: 'right', label: '依赖' },
+    { id: 'reverse-top-bottom', from: 'bbbbbbbb', to: 'aaaaaaaa', sourceHandle: 'top', targetHandle: 'bottom', label: '验证' },
+    { id: 'unrelated', from: 'aaaaaaaa', to: 'cccccccc', sourceHandle: null, targetHandle: null, label: '拆解为' },
+  ]));
+  assert.equal(h.records.length, 0);
+});
+
+test('actual board.edit pauses ambiguous unlink without changing the canvas or creating an undo step', async () => {
+  const edges = linkFixtures(), before = JSON.stringify(edges);
+  const h = harness(linkCards(), edges);
+  const result = await h.handleUiRequest('board.edit', { changes: [{ action: 'unlink', from: 'aaaaaaaa', to: 'bbbbbbbb' }] });
+  assert.equal(result.done, 0); assert.equal(result.failed, 1);
+  assert.match(result.summary, /MULTIPLE_CONNECTIONS/);
+  for (const id of ['manual-left-left', 'manual-right-right', 'reverse-top-bottom']) assert.ok(result.summary.includes(id));
+  assert.equal(JSON.stringify(h.get().edges), before); assert.equal(h.records.length, 0);
+});
+
+test('actual board.edit precise edgeId removes only the chosen line as one undo step', async () => {
+  const h = harness(linkCards(), linkFixtures());
+  const result = await h.handleUiRequest('board.edit', { changes: [{ action: 'unlink', edgeId: 'manual-right-right' }] });
+  assert.equal(result.done, 1); assert.equal(result.failed, 0);
+  assert.equal(JSON.stringify(linkIds(h)), JSON.stringify(['manual-left-left', 'reverse-top-bottom', 'unrelated']));
+  assert.equal(h.records.length, 1);
+});
+
+test('actual board.edit only explicitly requested all removes both directions of a multi-line pair', async () => {
+  const h = harness(linkCards(), linkFixtures());
+  const result = await h.handleUiRequest('board.edit', { changes: [{ action: 'unlink', from: 'aaaaaaaa', to: 'bbbbbbbb', all: true }] });
+  assert.equal(result.done, 1); assert.equal(result.failed, 0);
+  assert.equal(JSON.stringify(linkIds(h)), JSON.stringify(['unrelated']));
+  assert.equal(h.records.length, 1);
+});
+
+test('invalid edgeId with all true never degrades to removing all lines in actual board.edit', async () => {
+  const edges = linkFixtures(), before = JSON.stringify(edges);
+  const h = harness(linkCards(), edges);
+  const result = await h.handleUiRequest('board.edit', { changes: [{ action: 'unlink', edgeId: 'missing-edge', from: 'aaaaaaaa', to: 'bbbbbbbb', all: true }] });
+  assert.equal(result.done, 0); assert.equal(result.failed, 1);
+  assert.match(result.summary, /找不到指定的连线/);
+  assert.equal(JSON.stringify(h.get().edges), before); assert.equal(h.records.length, 0);
 });

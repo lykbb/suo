@@ -6,6 +6,7 @@ import { arrangeBoardNodes, classifyBoardNodes } from './boardLayout';
 import { browserRead, browserSearch } from './bridge';
 import { readMaterial, searchMaterials } from './materialContext';
 import { app } from './state';
+import { disconnectEdges } from './cardLinks';
 import type { Card, OperationReceipt, Rect, Workspace } from './types';
 
 // The interface side of the assistant's board, document and material tools. The backend asks,
@@ -179,7 +180,7 @@ function readBoard(input: Input) {
     cards: listed.map(node => ({ id: node.id, kind: node.data.asset ? 'file' : node.data.kind, fileKind: node.data.asset?.kind, title: node.data.title || '未命名',
       excerpt: node.data.asset ? '' : (node.data.content ?? '').slice(0, 240), group: node.parentId, selected: !!node.selected, byAssistant: byAssistant(node), ...looks(node) })),
     groups: groups.slice(offset, offset + 80).map(node => ({ id: node.id, parentId: node.parentId, title: node.data.title, ...looks(node) })), groupsTotal: groups.length, groupsOmitted: Math.max(0, groups.length - Math.min(80, Math.max(0, groups.length - offset))),
-    links: edges.slice(0, 120).map(item => ({ from: item.source, to: item.target, label: typeof item.label === 'string' ? item.label : undefined })),
+    links: edges.slice(0, 120).map(item => ({ id: item.id, from: item.source, to: item.target, sourceHandle: item.sourceHandle ?? null, targetHandle: item.targetHandle ?? null, label: typeof item.label === 'string' ? item.label : undefined })),
     selected: nodes.filter(node => node.selected && node.data.kind !== 'group').length, omitted: cards.length - listed.length, total: cards.length, offset,
     ...(offset + 80 < Math.max(cards.length, groups.length) ? { next: offset + 80 } : {}),
   };
@@ -275,9 +276,9 @@ async function editBoard(input: Input, operation?: OperationContext) {
         edges = [...edges, edge(find(change.from, nodes).id, find(change.to, nodes).id, text(change.label, 40))];
         done.push('连线');
       } else if (change?.action === 'unlink') {
-        const from = find(change.from, nodes).id, to = find(change.to, nodes).id, before = edges.length;
-        edges = edges.filter(item => !(item.source === from && item.target === to) && !(item.source === to && item.target === from));
-        if (edges.length === before) throw new Error('这两张卡片之间没有连线');
+        const edgeId = text(change.edgeId, 240).trim();
+        const from = change.from ? find(change.from, nodes).id : undefined, to = change.to ? find(change.to, nodes).id : undefined;
+        edges = disconnectEdges(edges, { edgeId: edgeId || undefined, from, to, all: change.all === true });
         done.push('删除连线');
       } else if (change?.action === 'remove') {
         const card = find(change.id, nodes);

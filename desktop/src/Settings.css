@@ -7,9 +7,12 @@
 .settings-content h2 { font-size:16px; margin:0 0 20px; }
 .settings-content p + p { margin-top:12px; }
 .settings-row { display:flex; justify-content:space-between; align-items:center; gap:20px; min-height:64px; border-bottom:1px solid var(--line); }
-.settings-row select { max-width:210px; padding:8px 10px; border:0; border-radius:6px; background:transparent; box-shadow:none; color:var(--text); font:inherit; }
-.settings-row select:hover { background:var(--surface-2); }
-.settings-row select:focus-visible { outline:2px solid var(--text-3); outline-offset:2px; }
+.settings-choice { position:relative; display:inline-flex; align-items:center; gap:8px; padding:8px 10px; border-radius:6px; color:var(--text); cursor:pointer; }
+.settings-choice svg { color:var(--text-3); flex-shrink:0; }
+.settings-choice:hover { background:var(--surface-2); }
+.settings-choice:has(select:focus-visible) { outline:2px solid var(--text-3); outline-offset:2px; }
+/* The real select covers the shown value invisibly, so the system list opens where it is clicked. */
+.settings-choice select { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; font:inherit; }
 :root[data-theme="dark"] {
   color-scheme:dark;
   --bg:#111111; --home:#111111; --surface:#1b1b1b; --surface-2:#222222; --surface-3:#2b2b2b;
@@ -17,7 +20,7 @@
   --note:#1b1b1b; --note-line:#383838; --note-text:#f5f5f5; --note-text-2:#a3a3a3;
   --select:#e5e5e5; --accent:#e5e5e5; --accent-strong:#e5e5e5; --accent-ink:#dddddd; --accent-soft:#2b2b2b; --danger:#f5f5f5;
   --edge:#a3a3a3; --on-ink:#171717; --selection-wash:rgb(255 255 255 / .05); --surface-overlay:rgb(27 27 27 / .94);
-  --shadow-1:0 1px 8px rgb(0 0 0 / .18); --shadow-2:0 8px 32px rgb(0 0 0 / .25); --shadow-3:0 20px 60px rgb(0 0 0 / .4);
+  --shadow-1:0 1px 8px rgb(0 0 0 / .18); --shadow-hover:0 4px 18px rgb(0 0 0 / .3); --shadow-2:0 8px 32px rgb(0 0 0 / .25); --shadow-3:0 20px 60px rgb(0 0 0 / .4);
 }
 :root[data-theme="dark"] .welcome h1 { color:var(--text); }
 :root[data-theme="dark"] .card-group { background:var(--surface-overlay); }

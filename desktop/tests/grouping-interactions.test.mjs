@@ -110,7 +110,7 @@ function harness(initial = fixture()) {
   const frames = new Map(), timers = new Map(), notices = [];
   const history = { past: [], future: [] }, session = { dirty: false, version: 1, saving: null };
   const context = {
-    exports: {}, history, session, saveTimer: undefined, nodeFrame: 0, queuedNodes: undefined, groupResizeGesture: undefined, bindings: {}, ...grouping,
+    exports: {}, alignDrag: () => {}, history, session, saveTimer: undefined, nodeFrame: 0, queuedNodes: undefined, groupResizeGesture: undefined, bindings: {}, ...grouping,
     applyNodeChanges, cleanNodes, groupCards, ungroupCards, structuredClone, crypto: { randomUUID: () => 'created' }, notice: value => notices.push(value),
     requestAnimationFrame: callback => { const id = ++serial; frames.set(id, callback); return id; }, cancelAnimationFrame: id => frames.delete(id),
     setTimeout: callback => { const id = ++serial; timers.set(id, callback); return id; }, clearTimeout: id => timers.delete(id),

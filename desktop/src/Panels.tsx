@@ -1,4 +1,4 @@
-import { lazy, memo, Suspense, useEffect, useMemo, useRef } from 'react';
+import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import FloatingPanel, { usePanelRect } from './FloatingPanel';
 import Icon from './Icon';
@@ -13,6 +13,7 @@ import SourceLinks from './SourceLinks.tsx';
 import { sourceClick, sourceDoubleClick, sourcePointerDown } from './sourceLinkEvents';
 import { SLASH_COMMANDS, addCard, chooseOption, closeReader, continueMessage, copyMessage, openDrawing, pickFiles, replyToCanvas, retry, send, stop, travelDraftHistory, update, updateDraft } from './actions';
 import { editableMarkdown } from './editableMarkdown';
+import { linkedContext } from './cardLinks';
 import { preferences } from './preferences';
 import { popover, spring } from './motion';
 import { app, hasContentOf, hasThreadOf, isWelcomeOf } from './state';
@@ -63,6 +64,13 @@ function Messages() {
   const messages = app.use(state => state.workspace?.messages ?? EMPTY);
   const busy = app.use(state => state.busy);
   const list = useRef<HTMLDivElement>(null), pinned = useRef(true), count = useRef(messages.length);
+  // The copy button turns into a check mark for a moment after a successful copy.
+  const [copied, setCopied] = useState('');
+  async function copy(id: string) {
+    if (!await copyMessage(id)) return;
+    setCopied(id);
+    setTimeout(() => setCopied(current => current === id ? '' : current), 1200);
+  }
   // Follow the reply only while the reader is at the bottom; a new message always scrolls into view.
   useEffect(() => {
     const element = list.current, added = messages.length !== count.current;
@@ -106,11 +114,11 @@ function Messages() {
       {message.ask && <AskOptions id={message.id} ask={message.ask} active={!busy && message.id === messages.at(-1)?.id} />}
       {message.role === 'assistant' && <SourceLinks steps={message.steps} />}
       {message.error && <MessageError error={message.error} />}
-      {message.cardIds?.length ? <span className="context-tag">引用 {message.cardIds.length} 张卡片</span> : null}
+      {message.cardIds?.length ? <span className="context-tag">引用 {message.cardIds.length} 张卡片{message.relatedIds?.length ? `，连带 ${message.relatedIds.length} 张相连卡片` : ''}</span> : null}
       {message.contextNote && <span className="context-tag context-note">{message.contextNote}</span>}
       {message.cancelled && <span className="stopped-label">已停止</span>}
       {(message.role === 'user' || !busy || message.id !== messages.at(-1)?.id) && <div className="message-actions">
-        {(message.text || message.error) && <button type="button" className="message-action" title={message.role === 'user' ? '复制消息' : '复制回复'} aria-label={message.role === 'user' ? '复制消息' : '复制回复'} onClick={() => void copyMessage(message.id)}><Icon name="copy" size={15} /></button>}
+        {(message.text || message.error) && <button type="button" className="message-action" title={message.role === 'user' ? '复制消息' : '复制回复'} aria-label={message.role === 'user' ? '复制消息' : '复制回复'} onClick={() => void copy(message.id)}><Icon name={copied === message.id ? 'check' : 'copy'} size={15} /></button>}
         {message.text && !message.cancelled && <button type="button" className="message-action" title="放到画布" aria-label="放到画布" onClick={() => replyToCanvas(message.id)}><Icon name="note" size={15} /></button>}
         {message.role === 'assistant' && message.incomplete && message.id === messages.at(-1)?.id && <button type="button" className="message-action" title="继续回复" aria-label="继续回复" disabled={busy} onClick={() => void continueMessage(message.id)}><Icon name="redo" size={15} />继续</button>}
         {message.role === 'assistant' && (message.cancelled || message.error) && !message.incomplete && !message.retryConflict && message.id === messages.at(-1)?.id && <button type="button" className="message-action" title="重试" aria-label="重试" disabled={busy} onClick={() => void retry(message.id)}><Icon name="redo" size={15} /></button>}
@@ -149,6 +157,8 @@ export function Composer() {
   app.use(state => state.historyVersion);
   const sendKey = preferences.use(state => state.sendKey);
   const selectedCount = app.use(state => state.workspace?.nodes.filter(node => node.selected && node.data.kind !== 'group').length ?? 0);
+  // Cards linked to the selection are sent along; say so before sending.
+  const relatedCount = app.use(state => state.workspace ? linkedContext(state.workspace.nodes, state.workspace.edges, state.workspace.nodes.filter(node => node.selected && node.data.kind !== 'group').map(node => node.id)).related.length : 0);
   const canSend = busy || !!draft.trim() || staged > 0;
   const slash = draft.startsWith('/') ? SLASH_COMMANDS.filter(([command]) => command.startsWith(draft.trim())) : [];
   // Mounted once the session is loaded, so it starts where it belongs instead of gliding there.
@@ -168,7 +178,7 @@ export function Composer() {
         <ComposerOptions />
         <AnimatePresence mode="wait" initial={false}>
           {!welcome && selectedCount > 0 && <motion.span key="selected" className="context-label" initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -3 }} transition={{ duration: 0.14 }}>
-            已引用 {selectedCount} 张卡片
+            已引用 {selectedCount} 张卡片{relatedCount ? `，连带 ${relatedCount} 张相连卡片` : ''}
           </motion.span>}
         </AnimatePresence>
       </div>

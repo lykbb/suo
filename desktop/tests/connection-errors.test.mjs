@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Chat, describeError } from '../bridge/chat.mjs';
-import { checkConnection } from '../bridge/connections.mjs';
+import { checkConnection, listModels, Connections } from '../bridge/connections.mjs';
+import { PRESETS, presetFor, recommendedModel } from '../src/modelPresets.ts';
+import { createTestDirectory } from './helpers/test-data.mjs';
 
 const key = 'sk-test-0123456789abcdefghijklmnop';
 const listing = ids => async () => new Response(JSON.stringify({ data: ids.map(id => ({ id })) }), { status: 200 });
@@ -63,4 +65,39 @@ test('the connection test tells a working model, one without tools and a failing
   assert.equal(missing.calls.length, 0);
   missing.chat.active = {};
   await assert.rejects(missing.chat.check({ provider: 'p', id: 'm' }), /先停止当前回复/);
+});
+
+test('the model picker lists chat models, explains failures and reaches Anthropic at /v1/models', async () => {
+  const seen = [];
+  const listing = ids => async url => { seen.push(String(url)); return new Response(JSON.stringify({ data: ids.map(id => ({ id })) }), { status: 200 }); };
+  const base = { api: 'openai-completions', baseUrl: 'https://api.example.test/v1', apiKey: key };
+  assert.deepEqual((await listModels(base, listing(['chat-model', 'reasoner-model', 'text-embedding-3', 'whisper-1']))).models, ['chat-model', 'reasoner-model']);
+  await assert.rejects(listModels(base, async () => new Response('', { status: 401 })), /API Key 无效.*401/);
+  await assert.rejects(listModels(base, async () => new Response('nope', { status: 404 })), /没有提供模型列表（HTTP 404）.*手动填写/);
+  await assert.rejects(listModels(base, async () => { throw Object.assign(new TypeError('fetch failed'), { cause: { code: 'ENOTFOUND' } }); }), /连不上这个接口（ENOTFOUND）/);
+  await listModels({ ...base, api: 'anthropic-messages', baseUrl: 'https://api.anthropic.test' }, listing(['claude-sonnet-x']));
+  assert.equal(seen.at(-1), 'https://api.anthropic.test/v1/models');
+});
+
+test('a saved key is reused to list models only for the same address', async () => {
+  const root = await createTestDirectory('discover-'), sent = [];
+  const fetchImpl = async (url, init) => { sent.push({ url: String(url), auth: init?.headers?.Authorization }); return new Response(JSON.stringify({ data: [{ id: 'fixture' }] }), { status: 200 }); };
+  const connections = new Connections({ root, dataRoot: root, fetch: fetchImpl });
+  const saved = await connections.configure({ baseUrl: 'https://api.example.test/v1', modelId: 'fixture', apiKey: key });
+  const provider = saved.selected.provider;
+  assert.deepEqual((await connections.discover({ provider, baseUrl: 'https://api.example.test/v1/', api: 'openai-completions' })).models, ['fixture']);
+  assert.equal(sent.at(-1).auth, `Bearer ${key}`);
+  const before = sent.length;
+  await assert.rejects(connections.discover({ provider, baseUrl: 'https://other.example.test/v1', api: 'openai-completions' }), /请先填写 API Key/);
+  assert.equal(sent.length, before, 'the saved key is not sent to another address');
+  await assert.rejects(connections.discover({ baseUrl: 'not a url', apiKey: key }), /接口地址格式不正确/);
+});
+
+test('service presets carry public addresses only and pick a sensible default from the listed models', () => {
+  assert(PRESETS.every(item => /^https:\/\//.test(item.baseUrl) && /^https:\/\//.test(item.keyUrl) && !/key=|sk-/i.test(item.baseUrl + item.keyUrl)));
+  const first = PRESETS[0];
+  assert.equal(presetFor(first.baseUrl + '/'), first);
+  assert.equal(recommendedModel(presetFor(first.baseUrl), ['some-reasoner', first.prefer[0]]), first.prefer[0]);
+  assert.equal(recommendedModel(presetFor('https://api.anthropic.com'), ['claude-opus-x', 'claude-sonnet-y']), 'claude-sonnet-y');
+  assert.equal(recommendedModel(undefined, ['anything']), undefined);
 });

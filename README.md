@@ -2,7 +2,7 @@
 
 面向 AI 产品经理的桌面工作台。资料、想法和对话放在同一张画布上，和 AI 一起把一个想法推进成立项报告、需求文档和调研结论。名字取自织布的梭子：在资料、工具和文档之间来回穿梭，把零散的线织成成品。
 
-Suo 是一个 macOS 桌面 App（Apple 芯片），没有命令行入口。
+Suo 是一个 macOS 桌面 App（Apple 芯片，macOS 13.5 及以上），没有命令行入口。
 
 <p align="center">
   <img src="docs/welcome.png?v=2" alt="Suo 欢迎界面" width="600">
