@@ -1,5 +1,6 @@
 import test from 'node:test';
 import { linkedContext } from '../src/cardLinks.ts';
+import { boardOutline } from '../src/boardOutline.ts';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { hideSystemRecord } from '../src/messageError.mjs';
@@ -26,7 +27,7 @@ function harness({ a = workspace('A'), b = workspace('B'), prepare, browser, sav
   const session = { version: a.version, dirty: false, saving: null, pendingSave: null, pendingChanged: false, importing: false, importCount: 0, running: null };
   const apply = patch => { state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) }; };
   const context = {
-    exports: {}, crypto: { randomUUID }, structuredClone, AbortController, Error, Set, Map, Math, session, hideSystemRecord, linkedContext,
+    exports: {}, crypto: { randomUUID }, structuredClone, AbortController, Error, Set, Map, Math, session, hideSystemRecord, linkedContext, boardOutline,
     workspaceLoads: { revision: 0 }, draftHistory: new Map(), importJobs: new Map(), nativeImports: [],
     history: { past: [], future: [] }, saveTimer: null, bindings: { flow: null }, entrances: new Map(), STAGGER: 0.06,
     clearTimeout() {}, setTimeout() { return 1; }, requestAnimationFrame() { return 1; }, drainNodeChanges() {},

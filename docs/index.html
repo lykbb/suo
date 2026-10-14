@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Suo · 梭</title>
+<meta name="description" content="Suo 是给产品经理用的 AI 画布工作台：资料、想法和对话放在同一张画布上，和 AI 一起把想法推进成需求文档和调研结论。macOS 桌面 App，免费开源。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&display=swap">
+<style>
+/* Layout: the page reads like the app itself, a quiet grey desk with white cards, and one woven
+   motif (warp and weft lines) for the shuttle the product is named after. */
+:root{
+  --bg:#f6f6f4; --surface:#ffffff; --line:#e5e5e5; --line-strong:#d4d4d4;
+  --text:#171717; --text-2:#404040; --text-3:#6b6b6b; --ink:#171717; --on-ink:#ffffff; --edge:#8a8a8a;
+  --weave:rgb(0 0 0 / .035);
+  --shadow:0 1px 2px rgb(0 0 0 / .05),0 8px 24px rgb(0 0 0 / .06);
+  --shadow-big:0 4px 12px rgb(0 0 0 / .06),0 30px 70px rgb(0 0 0 / .12);
+  --display:"Noto Serif SC","Songti SC","STSong",serif;
+  --body:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --r:10px; --r-lg:16px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121212; --surface:#1c1c1c; --line:#2c2c2c; --line-strong:#3a3a3a;
+    --text:#ededed; --text-2:#c4c4c4; --text-3:#8f8f8f; --ink:#f0f0f0; --on-ink:#121212; --edge:#8a8a8a;
+    --weave:rgb(255 255 255 / .03);
+    --shadow:0 1px 2px rgb(0 0 0 / .4),0 8px 24px rgb(0 0 0 / .35);
+    --shadow-big:0 4px 12px rgb(0 0 0 / .4),0 30px 70px rgb(0 0 0 / .55);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121212; --surface:#1c1c1c; --line:#2c2c2c; --line-strong:#3a3a3a;
+  --text:#ededed; --text-2:#c4c4c4; --text-3:#8f8f8f; --ink:#f0f0f0; --on-ink:#121212; --edge:#8a8a8a;
+  --weave:rgb(255 255 255 / .03);
+  --shadow:0 1px 2px rgb(0 0 0 / .4),0 8px 24px rgb(0 0 0 / .35);
+  --shadow-big:0 4px 12px rgb(0 0 0 / .4),0 30px 70px rgb(0 0 0 / .55);
+  color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.75 var(--body);-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:inherit}
+a:focus-visible,button:focus-visible{outline:2px solid var(--ink);outline-offset:3px;border-radius:6px}
+.wrap{width:100%;max-width:1120px;margin:0 auto;padding-inline:24px}
+h1,h2,h3{text-wrap:balance;margin:0}
+p{margin:0}
+.eyebrow{font:500 13px/1.4 var(--body);letter-spacing:.08em;color:var(--text-3)}
+.kbd{font:500 .85em var(--mono);padding:1px 6px;border:1px solid var(--line-strong);border-bottom-width:2px;border-radius:6px;background:var(--surface);white-space:nowrap}
+
+/* Top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid transparent}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;height:60px}
+.brand{display:flex;align-items:baseline;gap:8px;text-decoration:none;font:900 22px/1 var(--display)}
+.brand small{font:500 13px var(--body);color:var(--text-3);letter-spacing:.04em}
+.nav{display:flex;align-items:center;gap:22px;font-size:14px}
+.nav a{text-decoration:none;color:var(--text-2)}
+.nav a:hover{color:var(--text)}
+.nav .get{color:var(--on-ink);background:var(--ink);padding:7px 14px;border-radius:999px}
+.nav .get:hover{color:var(--on-ink);opacity:.88}
+
+/* Hero: warp lines run down the page behind the headline, weft lines across it. */
+.hero{position:relative;padding-block:72px 40px;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:repeating-linear-gradient(90deg,var(--weave) 0 1px,transparent 1px 28px),repeating-linear-gradient(0deg,var(--weave) 0 1px,transparent 1px 28px);
+  -webkit-mask-image:linear-gradient(to bottom,#000 30%,transparent 92%);mask-image:linear-gradient(to bottom,#000 30%,transparent 92%)}
+.hero-copy{max-width:760px}
+.hero h1{font:900 clamp(36px,6.2vw,68px)/1.18 var(--display);letter-spacing:-.01em;margin-top:18px}
+.hero .lead{margin-top:22px;max-width:36em;font-size:clamp(16px,2vw,19px);color:var(--text-2)}
+.actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:32px}
+.button{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:999px;font:600 15px/1 var(--body);text-decoration:none;border:1px solid var(--ink);transition:transform .15s,opacity .15s}
+.button.primary{background:var(--ink);color:var(--on-ink)}
+.button.ghost{color:var(--text);border-color:var(--line-strong);background:var(--surface)}
+.button:hover{transform:translateY(-1px)}
+.button:active{transform:scale(.97)}
+.requirement{margin-top:14px;font-size:13px;color:var(--text-3)}
+.shot{margin-top:56px;border-radius:var(--r-lg);border:1px solid var(--line);box-shadow:var(--shadow-big);overflow:hidden;background:var(--surface)}
+.shot img{width:100%;height:auto}
+
+/* Sections */
+section{padding-block:88px}
+.section-head{max-width:640px;display:grid;gap:14px;margin-bottom:44px}
+.section-head h2{font:900 clamp(28px,4vw,42px)/1.25 var(--display)}
+.section-head p{color:var(--text-2)}
+
+/* A small board: cards joined by labelled lines, the way they are on Suo's canvas. */
+.board{display:flex;align-items:center;gap:0;padding:36px;border-radius:var(--r-lg);border:1px solid var(--line);background:
+  radial-gradient(var(--line-strong) 1px,transparent 1.2px) 0 0/22px 22px,var(--bg)}
+.card{flex:1 1 0;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:16px 18px;display:grid;gap:6px}
+.card .kind{font-size:12px;color:var(--text-3)}
+.card strong{font:600 16px/1.5 var(--body)}
+.card p{font-size:14px;color:var(--text-2);line-height:1.6}
+.link{flex:0 0 112px;position:relative;height:44px;display:flex;align-items:center;justify-content:center}
+.link::before{content:"";position:absolute;left:0;right:8px;top:50%;border-top:1.5px solid var(--edge)}
+.link::after{content:"";position:absolute;right:0;top:50%;translate:0 -50%;border:6px solid transparent;border-left:9px solid var(--edge);border-right:0}
+.link span{position:relative;z-index:1;font-size:12px;padding:2px 9px;border-radius:6px;background:var(--surface);border:1px solid var(--line);color:var(--text-2)}
+.link i{position:absolute;left:0;top:50%;width:7px;height:7px;margin-top:-3.5px;border-radius:50%;background:var(--ink);animation:shuttle 3.2s ease-in-out infinite}
+@keyframes shuttle{0%{left:0;opacity:0}12%{opacity:1}80%{opacity:1}100%{left:calc(100% - 14px);opacity:0}}
+.reply{margin-top:22px;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start;max-width:760px}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;font:900 15px var(--display)}
+.bubble{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 18px;box-shadow:var(--shadow);min-width:0}
+.bubble p{font-size:15px;color:var(--text-2)}
+.bubble .who{font-size:12px;color:var(--text-3);margin-bottom:4px}
+.note{margin-top:12px;font-size:12px;color:var(--text-3)}
+
+/* Features */
+.features{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+.feature{background:var(--surface);padding:30px 32px;display:grid;gap:10px;align-content:start}
+.feature h3{font:600 19px/1.4 var(--body)}
+.feature p{color:var(--text-2);font-size:15px}
+
+/* How Suo works */
+.principles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 48px;max-width:960px}
+.principle{display:grid;gap:6px;padding-top:18px;border-top:1px solid var(--line-strong)}
+.principle h3{font:600 17px/1.5 var(--body)}
+.principle p{color:var(--text-2);font-size:15px}
+
+/* Skills */
+.skills{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.skill{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;padding:16px 20px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line)}
+.skill code{font:500 13px var(--mono);color:var(--text-3);overflow-wrap:anywhere}
+.skill span{font-size:15px}
+
+/* Models */
+.models{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:48px;align-items:start}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.chip{font-size:14px;padding:6px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
+.steps-mini{display:grid;gap:14px;padding:26px 28px;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--line)}
+.steps-mini div{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;font-size:15px;color:var(--text-2)}
+.steps-mini b{font:600 13px/1.9 var(--mono);color:var(--text-3)}
+
+/* Download */
+.download{text-align:left;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px;align-items:center;padding:48px;border-radius:var(--r-lg);background:var(--ink);color:var(--on-ink)}
+.download h2{font:900 clamp(28px,4vw,40px)/1.3 var(--display)}
+.download p{opacity:.75;margin-top:12px}
+.download .button.primary{background:var(--on-ink);color:var(--ink);border-color:var(--on-ink)}
+.download .button.ghost{background:transparent;color:var(--on-ink);border-color:color-mix(in srgb,var(--on-ink) 35%,transparent)}
+.download ol{margin:0;padding:0;list-style:none;display:grid;gap:12px;counter-reset:step}
+.download li{counter-increment:step;display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;font-size:15px;opacity:.9}
+.download li::before{content:counter(step);font:600 13px/1.9 var(--mono);opacity:.6}
+.download .kbd{background:transparent;border-color:color-mix(in srgb,var(--on-ink) 35%,transparent)}
+
+footer{padding-block:48px 64px;color:var(--text-3);font-size:14px}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
+footer p{max-width:34em}
+
+@media (max-width:860px){
+  .board{flex-direction:column;align-items:stretch;padding:22px}
+  .link{flex:0 0 64px;height:64px}
+  .link::before{left:50%;right:auto;top:0;bottom:8px;border-top:0;border-left:1.5px solid var(--edge)}
+  .link::after{left:50%;right:auto;top:auto;bottom:0;translate:-50% 0;border:6px solid transparent;border-top:9px solid var(--edge);border-bottom:0}
+  .link i{left:50%;top:0;margin:0 0 0 -3.5px;animation-name:shuttle-down}
+  @keyframes shuttle-down{0%{top:0;opacity:0}12%{opacity:1}80%{opacity:1}100%{top:calc(100% - 14px);opacity:0}}
+  .features,.principles,.skills,.models,.download{grid-template-columns:minmax(0,1fr)}
+  .download{padding:32px 24px;gap:32px}
+  .nav .hide-small{display:none}
+}
+@media (max-width:480px){
+  .wrap{padding-inline:16px}
+  .hero{padding-block:48px 24px}
+  section{padding-block:64px}
+  .feature{padding:24px 22px}
+}
+@media (prefers-reduced-motion:reduce){
+  .link i{animation:none;display:none}
+  .button{transition:none}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top">Suo <small>梭</small></a>
+    <nav class="nav" aria-label="页面导航">
+      <a class="hide-small" href="#board">画布</a>
+      <a class="hide-small" href="#features">功能</a>
+      <a class="hide-small" href="#skills">技能</a>
+      <a class="hide-small" href="https://github.com/lykbb/suo">GitHub</a>
+      <a class="get" href="#download">下载</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="hero">
+    <div class="wrap">
+      <div class="hero-copy">
+        <p class="eyebrow">给产品经理的 AI 画布工作台 · macOS · 免费开源</p>
+        <h1>把零散的资料，<br>织成一份能评审的文档。</h1>
+        <p class="lead">访谈记录、竞品截图、会议纪要和一闪而过的想法，都摆在同一张画布上。Suo 读得懂这些资料和你画的连线，陪你把一个想法推进成机会判断、PRD 和调研结论。</p>
+        <div class="actions">
+          <a class="button primary" href="https://github.com/lykbb/suo/releases/latest">下载 macOS 版</a>
+          <a class="button ghost" href="https://github.com/lykbb/suo">查看源码</a>
+        </div>
+        <p class="requirement">Apple 芯片 · macOS 13.5 及以上 · 使用你自己的模型 Key</p>
+      </div>
+      <div class="shot">
+        <img src="canvas-agent.png" width="2144" height="1390" alt="Suo 的画布：左边是资料卡片和连线，右边是和 Suo 的对话">
+      </div>
+    </div>
+  </div>
+
+  <section id="board">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">画布</p>
+        <h2>你画的每一根线，Suo 都会顺着去想</h2>
+        <p>卡片之间可以连线，线上写清关系：导致、依赖、支持、反驳、拆解为、验证。选中一张卡片提问时，和它相连的卡片和这些关系会一起交给 Suo，它会沿着你的思路推理，也会指出哪一环还缺证据。</p>
+      </div>
+      <div class="board" role="img" aria-label="示意画板：访谈记录散落在多个工具里，导致整理一次访谈要两小时，再拆解为先做自动转写">
+        <div class="card"><span class="kind">资料 · 访谈纪要</span><strong>访谈记录散落在多个工具里</strong><p>录音在手机，笔记在文档，结论在群聊。</p></div>
+        <div class="link" aria-hidden="true"><i></i><span>导致</span></div>
+        <div class="card"><span class="kind">便签 · 问题</span><strong>整理一次访谈要两小时</strong><p>来自访谈里的自述，还没有实际统计。</p></div>
+        <div class="link" aria-hidden="true"><i></i><span>拆解为</span></div>
+        <div class="card"><span class="kind">便签 · 想法</span><strong>先做自动转写</strong><p>把录音转成文字，再按问题归档。</p></div>
+      </div>
+      <div class="reply">
+        <div class="avatar" aria-hidden="true">梭</div>
+        <div class="bubble">
+          <p class="who">Suo</p>
+          <p>沿着这两条线看，“散落”导致“耗时”目前只有访谈里的说法。建议先统计一周真实的整理时长，确认两小时成立，再决定是否先做自动转写。</p>
+        </div>
+      </div>
+      <p class="note">以上为示意。</p>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">功能</p>
+        <h2>资料、想法、对话和文档，在一张画布上</h2>
+      </div>
+      <div class="features">
+        <div class="feature">
+          <h3>自由摆放的画布</h3>
+          <p>便签、文档、草图和文件卡片随意摆放，可以连线、成组（<span class="kbd">⌘G</span>）、上色、加标签和置顶。拖动时有对齐参考线。便签和文档支持 Markdown，文档能导出为 Markdown 文件。</p>
+        </div>
+        <div class="feature">
+          <h3>直接读资料</h3>
+          <p>PDF 可以连续阅读，Word、CSV、网页、图片和音视频都能在卡片里打开。Suo 只根据实际读到的内容回答，读不全时会告诉你缺了哪部分。</p>
+        </div>
+        <div class="feature">
+          <h3>会动手的 AI</h3>
+          <p>Suo 能读取画布和资料，联网搜索、读取网页，把结果整理成卡片，撰写和修改文档，也能帮你分组、排列、上色。需求不清楚时，它会给出几个选项让你选。</p>
+        </div>
+        <div class="feature">
+          <h3>随时可以撤销</h3>
+          <p>Suo 对画布的每一次改动都能用 <span class="kbd">⌘Z</span> 撤销，回复也可以随时停止。会话自动保存，可以重命名、置顶，删除后还能从回收站恢复。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">工作方式</p>
+        <h2>像一个靠谱的产品搭档那样工作</h2>
+        <p>Suo 的判断标准写在开源的 <code>agent.md</code> 里，你可以直接读到它被要求怎么做。</p>
+      </div>
+      <div class="principles">
+        <div class="principle"><h3>先弄清问题，再谈方案</h3><p>你提一个功能，它会先问清楚是谁、在什么场景下需要、有什么证据，而不是马上列实现步骤。</p></div>
+        <div class="principle"><h3>分清事实、推断和假设</h3><p>访谈原话、它的推断和待验证的假设分开写，用户的描述不会被当成已经验证的市场事实。</p></div>
+        <div class="principle"><h3>不编数字</h3><p>缺数据的地方写“尚未验证”，再给出最小的验证办法，不会用编出来的数字填满表格。</p></div>
+        <div class="principle"><h3>只说做到了的事</h3><p>没读到的资料不说读过，没执行的操作不说完成。工具做不到时，它会说清楚哪项做不了，以及接下来能做什么。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="skills">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">技能</p>
+        <h2>自带十二个产品经理技能</h2>
+        <p>遇到对应的任务，Suo 会自己加载合适的方法。你也可以在 App 里导入自己写的技能。</p>
+      </div>
+      <div class="skills">
+        <div class="skill"><span>产品立项教练：一步步推导问题、目标体验和取舍，形成立项报告</span><code>ai-product-initiation</code></div>
+        <div class="skill"><span>判断需求该不该做，找到产品机会</span><code>pm-opportunity-assessment</code></div>
+        <div class="skill"><span>整理 PDF、访谈、会议纪要，保留来源</span><code>pm-material-synthesis</code></div>
+        <div class="skill"><span>设计访谈，分析用户研究</span><code>pm-user-research</code></div>
+        <div class="skill"><span>调研竞品和替代方案</span><code>pm-competitive-research</code></div>
+        <div class="skill"><span>拆解用户任务、流程、规则与范围</span><code>pm-requirements-prd</code></div>
+        <div class="skill"><span>撰写与修订 PRD：来自 <a href="https://github.com/a15242408085-bot/pm-prd-skills">a15242408085-bot / pm-prd-skills</a>，MIT 许可</span><code>pm-prd</code></div>
+        <div class="skill"><span>排优先级，划 MVP，做路线图</span><code>pm-prioritization-roadmap</code></div>
+        <div class="skill"><span>定指标，设计实验，复盘上线效果</span><code>pm-metrics-experiments</code></div>
+        <div class="skill"><span>设计 AI 产品：RAG、Agent、评估与失败处理</span><code>pm-ai-product-design</code></div>
+        <div class="skill"><span>设计 AI 评测集，检查真实结果与失败案例</span><code>pm-ai-evaluation</code></div>
+        <div class="skill"><span>通用产品经理模板，补充 GTM 与 Sprint 健康快照</span><code>product-manager</code></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="models">
+    <div class="wrap models">
+      <div>
+        <div class="section-head" style="margin-bottom:0">
+          <p class="eyebrow">模型</p>
+          <h2>使用自己的模型，会话和资料在本机保存</h2>
+          <p>Suo 不提供模型，也不收费。在设置里选一家服务，贴上自己的 Key，就能从这家服务的模型列表里挑一个来用。会话和资料保存在本机；发送时，问题、相关资料和画板简况（标题、分组、连线）会发送到你配置的模型服务。</p>
+        </div>
+        <div class="chips" aria-label="已预设的模型服务">
+          <span class="chip">DeepSeek</span><span class="chip">Kimi</span><span class="chip">通义千问</span><span class="chip">智谱 GLM</span>
+          <span class="chip">硅基流动</span><span class="chip">OpenRouter</span><span class="chip">OpenAI</span><span class="chip">Anthropic</span><span class="chip">自定义接口</span>
+        </div>
+      </div>
+      <div class="steps-mini" aria-label="添加模型的步骤">
+        <div><b>1</b><span>打开「设置 → 模型」，选择服务</span></div>
+        <div><b>2</b><span>贴上你在这家服务申请的 Key</span></div>
+        <div><b>3</b><span>从列表里选模型</span></div>
+        <div><b>4</b><span>点「测试连接」，确认模型能用、支持工具调用</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="download">
+    <div class="wrap">
+      <div class="download">
+        <div>
+          <h2>下载 Suo</h2>
+          <p>macOS 桌面 App，支持 Apple 芯片，需要 macOS 13.5 及以上。MIT 开源许可。</p>
+          <div class="actions">
+            <a class="button primary" href="https://github.com/lykbb/suo/releases/latest">下载 DMG</a>
+            <a class="button ghost" href="https://github.com/lykbb/suo">GitHub 源码</a>
+          </div>
+        </div>
+        <ol>
+          <li><span>在 Releases 页面下载 <code>Suo_版本号_aarch64.dmg</code></span></li>
+          <li><span>打开 DMG，把 Suo 拖进「应用程序」</span></li>
+          <li><span>App 暂时没有 Apple 开发者签名，第一次打开时在「应用程序」里右键 Suo，选择「打开」</span></li>
+          <li><span>在「设置 → 模型」里添加你的模型，就可以开始了</span></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>梭，是织布时在经线之间来回穿行、带着纬线的工具。Suo 想做的，就是在资料、工具和文档之间来回穿梭，把零散的线织成成品。</p>
+    <p><a href="https://github.com/lykbb/suo">GitHub</a> · MIT 许可</p>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -15,8 +15,10 @@ const SKILL_LOOKS: Record<string, { icon: string; tone: string }> = {
   'ai-product-initiation': { icon: 'bulb', tone: 'orange' }, 'pm-ai-product-design': { icon: 'chip', tone: 'purple' },
   'pm-competitive-research': { icon: 'scale', tone: 'teal' }, 'pm-material-synthesis': { icon: 'layers', tone: 'blue' },
   'pm-metrics-experiments': { icon: 'chart', tone: 'green' }, 'pm-opportunity-assessment': { icon: 'target', tone: 'yellow' },
-  'pm-prioritization-roadmap': { icon: 'flag', tone: 'orange' }, 'pm-requirements-prd': { icon: 'prd', tone: 'blue' },
+  'pm-prioritization-roadmap': { icon: 'flag', tone: 'orange' }, 'pm-requirements-prd': { icon: 'layers', tone: 'blue' },
+  'pm-prd': { icon: 'prd', tone: 'blue' },
   'pm-user-research': { icon: 'users', tone: 'pink' }, 'product-manager': { icon: 'compass', tone: 'teal' },
+  'pm-ai-evaluation': { icon: 'check', tone: 'purple' },
 };
 const TONES = ['blue', 'green', 'yellow', 'purple', 'pink', 'orange', 'teal'];
 const skillLook = (name: string) => SKILL_LOOKS[name] ?? { icon: 'sparkle', tone: TONES[[...name].reduce((sum, char) => sum + char.charCodeAt(0), 0) % TONES.length] };

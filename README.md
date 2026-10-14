@@ -34,11 +34,13 @@ Suo 是一个 macOS 桌面 App（Apple 芯片，macOS 13.5 及以上），没有
 | `pm-material-synthesis` | 资料整理与知识归纳 |
 | `pm-user-research` | 用户研究与访谈分析 |
 | `pm-competitive-research` | 竞品与替代方案研究 |
-| `pm-requirements-prd` | 需求拆解与 PRD |
+| `pm-requirements-prd` | 需求拆解：问题、用户任务、流程、规则、范围与验收底稿 |
+| `pm-prd` | PRD 撰写与修订：原作者 [a15242408085-bot](https://github.com/a15242408085-bot/pm-prd-skills)，MIT，已为 Suo 适配 |
 | `pm-prioritization-roadmap` | 优先级与版本路线图 |
 | `pm-metrics-experiments` | 指标设计与实验复盘 |
 | `pm-ai-product-design` | AI 产品设计与评估 |
-| `product-manager` | 产品经理全生命周期：机会评估、PRD、路线图、GTM 上市方案、上线后度量（作者 zxh，MIT） |
+| `pm-ai-evaluation` | AI 评测集设计：分类案例、评分方法、上线门槛与回归 |
+| `product-manager` | 通用模板库，主要用于 GTM 上市方案和 Sprint 健康快照（作者 zxh，MIT，已为 Suo 调整） |
 
 技能是 Agent Skills 格式：每个技能一个目录，里面放 `SKILL.md`，模板和参考资料放在同目录的 `references/`、`assets/` 下。也可以在 App 的「技能」里导入自己的技能。
 

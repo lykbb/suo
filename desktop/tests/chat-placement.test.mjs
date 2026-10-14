@@ -1,5 +1,6 @@
 import test from 'node:test';
 import { linkedContext } from '../src/cardLinks.ts';
+import { boardOutline } from '../src/boardOutline.ts';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { hideSystemRecord } from '../src/messageError.mjs';
@@ -22,7 +23,7 @@ function harness({ nodes = [], attachments = [] } = {}) {
   const calls = [], entrances = new Map(), session = { running: null };
   let recorded = 0;
   const context = {
-    exports: {}, crypto: { randomUUID }, AbortController, setTimeout, clearTimeout, session, entrances, STAGGER: 0.06, hideSystemRecord, linkedContext,
+    exports: {}, crypto: { randomUUID }, AbortController, setTimeout, clearTimeout, session, entrances, STAGGER: 0.06, hideSystemRecord, linkedContext, boardOutline,
     app: { get: () => state, set: patch => { state = { ...state, ...patch }; } },
     update: change => { state = { ...state, workspace: change(state.workspace) }; },
     record: () => { recorded++; }, flush: async () => {}, notice: () => {}, LOCAL_COMMANDS: {},
@@ -60,6 +61,7 @@ test('sending while cards are selected preserves the cards and references them w
   assert.equal(h.get().workspace.nodes[0], card);
   assert.equal(h.get().workspace.messages[0].cardIds[0], card.id);
   assert.equal(h.calls[0].payload.selected[0].content, card.data.content);
+  assert.match(h.calls[0].payload.boardOutline, /^共 1 张卡片、0 个分组、0 条连线。\n- \[existing\] 访谈（文档，已选中）$/u);
 });
 
 test('staged files remain material cards, including when an existing card is selected', async () => {

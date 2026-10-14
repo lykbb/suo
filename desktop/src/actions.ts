@@ -13,6 +13,7 @@ import { handleUiRequest } from './agentTools';
 import { metadataPatch, type MetadataChange } from './cardMetadata';
 import { alignTo } from './alignment';
 import { linkedContext } from './cardLinks';
+import { boardOutline } from './boardOutline';
 import { hideSystemRecord, messageDisplayText } from './messageError.mjs';
 import { replyWithSources } from './sourceLinks';
 import { addCardsToGroup, captureGroupResize, groupSelectionPlan, reparentDraggedCards, resizeGroupCards, restoreGroupResize, selectedGroupIds, type GroupResizeSnapshot } from './grouping';
@@ -681,8 +682,10 @@ export async function send(text = app.get().workspace?.draft ?? '', { land = tru
     const scopeNote = cards.length ? `本轮已读取 ${preparedIds.size}/${cards.length} 份资料${cards.length > preparedIds.size ? '，其余正文未发送，可继续按目录读取' : ''}` : '';
     const notes = [scopeNote, ...context.map(item => item.note)].filter(Boolean).join('；');
     if (notes) update(value => ({ ...value, messages: value.messages.map(item => item.id === messageId ? { ...item, contextNote: notes } : item) }));
+    // The board as it is now, attached files included, so Suo knows it without reading it each turn.
+    const board = app.get().workspace ?? workspace;
     const materialCatalog = { items: cards.slice(0, 80).map(card => ({ id: card.id, title: card.title.slice(0, 120), kind: card.kind, prepared: preparedIds.has(card.id) })), total: cards.length, prepared: preparedIds.size, ...(cards.length > 80 ? { next: 80 } : {}) };
-    await request<{ runId: string }>('prompt.send', { runId: run.runId, logicalRequestId, ...taskScope, workspaceId: workspace.id, model: workspace.model, message, selected: context.map(({ note: _note, ...item }) => item), materialCatalog, history: prepared.history, historySummary: prepared.summary, actionLog: actionLog(workspace.messages), summarizedTurns: prepared.summarized,
+    await request<{ runId: string }>('prompt.send', { runId: run.runId, logicalRequestId, ...taskScope, workspaceId: workspace.id, model: workspace.model, message, selected: context.map(({ note: _note, ...item }) => item), materialCatalog, boardOutline: boardOutline(board.nodes, board.edges ?? []), history: prepared.history, historySummary: prepared.summary, actionLog: actionLog(workspace.messages), summarizedTurns: prepared.summarized,
       operationReceipts, ...(retryMessage ? { retryContext: { text: retryMessage.text, steps: attempts.flatMap(item => item.steps ?? []).slice(-512) } } : {}) });
   } catch (error) {
     if (session.running !== run) return;

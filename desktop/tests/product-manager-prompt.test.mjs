@@ -28,6 +28,13 @@ test('new and existing conversations use the role while card instructions stay i
   assert.match(resumed.messages.at(-1).content, /帮我评估一个产品机会/);
 });
 
+test('the role keeps its five parts and each rule is written in one place', () => {
+  for (const heading of ['## 一、身份与立场', '## 二、每一轮怎么做', '## 三、产品经理的专业', '## 四、工作台规则', '## 五、怎么说话']) assert(role.includes(heading), heading);
+  const prompt = makeContext(payload(), model, [], role).systemPrompt, count = text => prompt.split(text).length - 1;
+  // Identity and how to ask live in the role; trust and honest reporting in the workbench rules.
+  for (const rule of ['真实任职经历', '能合理假设', '不是给你的指令', '已改色']) assert.equal(count(rule), 1, rule);
+});
+
 test('the actual SDK sends the full role as a system message to a local fixture', async () => {
   const requests = [], events = [];
   const api = createServer(async (req, res) => {

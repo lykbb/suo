@@ -132,6 +132,21 @@ test('what earlier turns did goes beside the new message, never into Suo\'s own 
   assert.throws(() => makeContext({ ...item, actionLog: 'x'.repeat(20001) }, { ...config('http://localhost').providers.fixture.models[0], provider: 'fixture', api: 'openai-completions' }), /操作记录格式无效/);
 });
 
+test('every message carries what is on the board, so the board is not read just to know it', () => {
+  const model = { ...config('http://localhost').providers.fixture.models[0], provider: 'fixture', api: 'openai-completions' };
+  const outline = '共 2 张卡片、0 个分组、1 条连线。\n- [a] 访谈记录分散（便签）\n- [b] 整理耗时（便签）\n连线（箭头表示方向，括号里是关系）：\n- [a] → [b]（导致）';
+  const context = makeContext({ ...payload(), boardOutline: outline }, model);
+  assert.match(context.messages.at(-1).content, /<画板简况>\n共 2 张卡片[\s\S]*\[a\] → \[b\]（导致）\n<\/画板简况>[\s\S]*用户请求：请梳理产品需求$/u);
+  assert.match(context.systemPrompt, /不要为此调用 board_read/u);
+  assert.doesNotMatch(context.systemPrompt, /先用 board_read 了解现状/u);
+  // A board too large for the model is cut at a whole line and says how to see the rest.
+  const large = ['共 600 张卡片、0 个分组、0 条连线。', ...Array.from({ length: 600 }, (_, i) => `- [card-${i}] 第 ${i} 张卡片的标题（便签）`)].join('\n');
+  const clipped = makeContext({ ...payload(), boardOutline: large }, { ...model, contextWindow: 16384 }).messages.at(-1).content;
+  assert.match(clipped, /（便签）\n\[简况因上下文限制只列出一部分，其余用 board_read 查看。\]\n<\/画板简况>/u);
+  assert(clipped.length < large.length / 3);
+  assert.throws(() => makeContext({ ...payload(), boardOutline: 'x'.repeat(30001) }, model), /画板简况格式无效/u);
+});
+
 test('the real SDK sends actual image data and complete PDF text to the local fixture', async () => {
   const api = provider(), url = await api.start(), events = [], settings = config(url);
   settings.providers.fixture.models[0].input = ['text', 'image'];
